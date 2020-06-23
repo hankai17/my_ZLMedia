@@ -24,7 +24,13 @@ using namespace mediakit::Client;
 
 namespace mediakit {
 
-class FlvPlayerImp : public PlayerImp<FlvPlayer, FlvDemuxer> {
+class FlvPlayerImp : public PlayerImp<FlvPlayer, FlvProtocol> {
+public:
+    typedef std::shared_ptr<FlvPlayerImp> Ptr;
+
+private:
+    FlvMediaSource::Ptr _pFlvMediaSrc;
+    bool _set_meta_data = false;
 };
 
 class RtmpPlayerImp: public PlayerImp<RtmpPlayer,RtmpDemuxer> {

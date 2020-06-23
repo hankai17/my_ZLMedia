@@ -127,7 +127,7 @@ public:
 #pragma pack(pop)
 #endif // defined(_WIN32)
 
-class FlvPacket : public Buffer{ // type
+class FlvPacket : public Buffer{
 public:
     typedef std::shared_ptr<FlvPacket> Ptr;
     FlvPacket(const uint8_t* buf, int len, int type, bool keyframe) :
@@ -136,16 +136,34 @@ public:
     iskeyFrame(keyframe) {
     };
 
-    // copy struct TODO
+    FlvPacket() = default;
+    FlvPacket(const FlvPacket &that) = delete;
+    FlvPacket &operator=(const FlvPacket &that) = delete;
+    //FlvPacket &operator=(FlvPacket &&that) = delete;
+    FlvPacket(FlvPacket&& that) {
+        strBuf = std::move(that.strBuf);
+        type = that.type;
+        iskeyFrame = that.iskeyFrame;
+        timeStamp = that.timeStamp;
+    }
+
+    FlvPacket& operator=(FlvPacket&& that) {
+        strBuf = std::move(that.strBuf);
+        type = that.type;
+        iskeyFrame = that.iskeyFrame;
+        timeStamp = that.timeStamp;
+        return *this;
+    }
 
     char *data() const override{
         return (char*)strBuf.data();
     }
+
     uint32_t size() const override {
         return strBuf.size();
     };
 
-private:
+public:
     std::string strBuf;
     int type;
     bool iskeyFrame;

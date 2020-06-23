@@ -33,6 +33,83 @@ using namespace toolkit;
 #define RTMP_GOP_SIZE 512
 namespace mediakit {
 
+class FlvMediaSource : public MediaSource, public RingDelegate<FlvPacket::Ptr>, public PacketCache<FlvPacket> {
+public:
+    typedef std::shared_ptr<FlvMediaSource> Ptr;
+    typedef std::shared_ptr<List<FlvPacket::Ptr> > RingDataType;
+    typedef RingBuffer<RingDataType> RingType;
+
+    FlvMediaSource(const string &vhost,
+                    const string &app,
+                    const string &stream_id,
+                    int ring_size = RTMP_GOP_SIZE) :
+            MediaSource(HTTP_SCHEMA, vhost, app, stream_id), _ring_size(ring_size) {
+    }
+
+    virtual ~FlvMediaSource() {}
+
+    const RingType::Ptr &getRing() const {
+        return _ring;
+    }
+
+    int readerCount() override {
+        return _ring ? _ring->readerCount() : 0;
+    }
+
+    const AMFValue &getMetaData() const {
+        lock_guard<recursive_mutex> lock(_mtx);
+        return _metadata;
+    }
+
+    void onWrite(const FlvPacket::Ptr &pkt, bool key = true) override {
+        lock_guard<recursive_mutex> lock(_mtx);
+        if(pkt->type == MSG_VIDEO){
+            //有视频，那么启用GOP缓存
+            //_have_video = true;
+        }
+        if (pkt->type == 18) {
+            _config_frame_map[pkt->type] = pkt;
+            return;
+        }
+
+        //保存当前时间戳
+        _track_stamps_map[pkt->type] = pkt->timeStamp;
+
+        if (!_ring) {
+            weak_ptr<FlvMediaSource> weakSelf = dynamic_pointer_cast<FlvMediaSource>(shared_from_this());
+            auto lam = [weakSelf](const EventPoller::Ptr &, int size, bool) {
+                auto strongSelf = weakSelf.lock();
+                if (!strongSelf) {
+                    return;
+                }
+                //strongSelf->onReaderChanged(size);
+            };
+
+            //rtmp包缓存最大允许512个，如果是纯视频(25fps)大概为20秒数据
+            //但是这个是GOP缓存的上限值，真实的GOP缓存大小等于两个I帧之间的包数的两倍
+            //而且每次遇到I帧，则会清空GOP缓存，所以真实的GOP缓存远小于此值
+            _ring = std::make_shared<RingType>(_ring_size,std::move(lam));
+            //onReaderChanged(0);
+
+            if(_metadata){
+                regist();
+            }
+        }
+        // Refer before 04 TODO
+        //PacketCache<RtmpPacket>::inputPacket(pkt->typeId == MSG_VIDEO, pkt, key);
+
+    }
+
+private:
+    int _ring_size;
+    //bool _have_video = false;
+    mutable recursive_mutex _mtx;
+    AMFValue _metadata;
+    RingType::Ptr _ring;
+    unordered_map<int, uint32_t> _track_stamps_map;
+    unordered_map<int, FlvPacket::Ptr> _config_frame_map;
+};
+
 /**
  * rtmp媒体源的数据抽象
  * rtmp有关键的三要素，分别是metadata、config帧，普通帧

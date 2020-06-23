@@ -34,7 +34,7 @@ public:
     FlvProtocol();
     void onParseFlv(const char *pcRawData,int iSize); // init first tag; get frame
 
-    virtual void onFlvFrame(FlvPacket &frameData); // parsed frame; called by upper
+    virtual void onFlvFrame(FlvPacket &frameData); // parsed frame; called and override by upper
 
 public:
     string _strRcvBuf; // raw buff
@@ -44,13 +44,13 @@ public:
     bool is_first_flv_pack;
 
     flv_header_t m_flvHeader;
-    string _first_audio_tag;
-    string _first_video_tag;
-    string _first_script_tag;
+    FlvPacket _first_audio_tag;
+    FlvPacket _first_video_tag;
+    FlvPacket _first_script_tag;
 
-    uint8_t* frame_start;
-    int frame_len;
-    int frame_type;
+    uint8_t* tag_start;
+    int tag_len;
+    int tag_type;
 };
 
 class RtmpProtocol {

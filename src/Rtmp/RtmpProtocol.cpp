@@ -62,8 +62,30 @@ namespace mediakit {
 
 static int flv_data_parsed(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags) {
     FlvProtocol* th = static_cast<FlvProtocol*>(param);
-    FlvPacket pack(th->frame_start, th->frame_len, th->frame_type, flags);
+    FlvPacket pack(th->tag_start, th->tag_len, th->tag_type, flags);
+
+    if (th->tag_type == 18) {
+        if (!th->is_first_script_init) {
+            th->is_first_script_init = true;
+            th->_first_script_tag = std::move(pack);
+        }
+
+    } else if (th->tag_type == 9) {
+        if (!th->is_first_video_init) {
+            th->is_first_video_init = true;
+            th->_first_video_tag = std::move(pack);
+        }
+
+    } else if (th->tag_type == 8) {
+        if (!th->is_first_audio_init) {
+            th->is_first_audio_init = true;
+            th->_first_audio_tag = std::move(pack);
+        }
+
+    }
+
     th->onFlvFrame(pack);
+
     return -1;
 }
 
@@ -76,7 +98,8 @@ FlvProtocol::FlvProtocol():
 
 void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
     _strRcvBuf.append(pcRawData, iSize);
-    uint8_t* pos = (uint8_t*)pcRawData;
+
+    uint8_t* pos = (uint8_t*)&_strRcvBuf[0];
     int len = iSize;
     if (is_first_flv_pack) {
         is_first_flv_pack = false;
@@ -88,7 +111,7 @@ void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
     flv_tag_header_t tag_header;
 
     while (1) {
-        uint8_t* frame_start1 = pos;
+        uint8_t* frame_start = pos;
         int header_size = flv_tag_header_read(&tag_header, pos, len);
         if (header_size == -1) {
             return;
@@ -99,7 +122,6 @@ void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
         len -= header_size;
 
         if (tag_header.type == 18) { // script
-
         } else if (tag_header.type == 9) { // video
             flv_video_tag_header_t vtag_header;
             int header_size = flv_video_tag_header_read(&vtag_header, pos, len);
@@ -110,19 +132,29 @@ void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
             len -= header_size;
             flv_parser_input(9, (void*)pos, len, tag_header.timestamp, flv_data_parsed, (void*)this);
 
-            frame_start = frame_start1;
-            frame_len = 11 + tag_header.size;
-            frame_type = 9;
-
+            tag_start = frame_start;
+            tag_len = 11 + tag_header.size;
+            tag_type = 9;
         } else if (tag_header.type == 8) { // audio
+            flv_audio_tag_header_t atag_header;
+            int header_size = flv_audio_tag_header_read(&atag_header, pos, len);
+            if (header_size == -1) {
+                return;
+            }
 
+            pos += header_size;
+            len -= header_size;
+            flv_parser_input(9, (void*)pos, len, tag_header.timestamp, flv_data_parsed, (void*)this);
+
+            tag_start = frame_start;
+            tag_len = 11 + tag_header.size;
+            tag_type = 8;
         } else {
             return;
         }
 
     }
 
-    flv_parser_input(pcRawData[], pcRawData, iSize, firstTagTimeStamp, flv_data_parsed, this);
 }
 
 

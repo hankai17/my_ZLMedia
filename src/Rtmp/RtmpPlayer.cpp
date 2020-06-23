@@ -26,6 +26,27 @@ FlvPlayer::~FlvPlayer() {
     DebugL << endl;
 }
 
+void FlvPlayer::onFlvFrame(FlvPacket &frameData) {
+    switch (frameData.type) {
+        case 18: {
+
+        }
+            break;
+        case 9: {
+
+        }
+            break;
+        case 8: {
+
+        }
+            break;
+        default: {
+            break;
+        }
+    }
+    onMediaData(std::make_shared<FlvPacket>(std::move(frameData)));
+}
+
 void FlvPlayer::onPlayResult_l(const SockException &ex , bool handshakeCompleted) {
     WarnL << ex.getErrCode() << " " << ex.what();
     if(!ex) {

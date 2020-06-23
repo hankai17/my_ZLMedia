@@ -45,11 +45,11 @@ protected:
     void onRecv(const Buffer::Ptr &pBuf) override; // 2
 
 protected:
-    //from FlvProtocol TODO
+    //from FlvProtocol
     void onFlvFrame(FlvPacket &frameData) override;
 
 protected:
-    virtual void onMediaData(const FlvPacket::Ptr &frameData) =0;
+    virtual void onMediaData(const FlvPacket::Ptr &frameData) = 0;
 
 private:
     string _strApp;
