@@ -38,11 +38,11 @@ public:
     void onPlayResult_l(const SockException &ex , bool handshakeCompleted);
 
 protected:
-    void play(const string &strUrl) override;
+    void play(const string &strUrl) override; // 1
 
 protected:
     //form Tcpclient
-    void onRecv(const Buffer::Ptr &pBuf) override;
+    void onRecv(const Buffer::Ptr &pBuf) override; // 2
 
 protected:
     //from FlvProtocol TODO

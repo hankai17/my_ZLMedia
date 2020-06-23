@@ -21,7 +21,8 @@
 #include "amf.h"
 #include "Extension/Track.h"
 
-#include "libflv/flv-header"
+#include "libflv/flv-header.h"
+#include "libflv/flv-parser.h"
 
 using namespace toolkit;
 
@@ -126,10 +127,15 @@ public:
 #pragma pack(pop)
 #endif // defined(_WIN32)
 
-class FlvPacket : public Buffer{
+class FlvPacket : public Buffer{ // type
 public:
     typedef std::shared_ptr<FlvPacket> Ptr;
-    FlvPacket() = default;
+    FlvPacket(const uint8_t* buf, int len, int type, bool keyframe) :
+    strBuf((char*)buf, len),
+    type(type),
+    iskeyFrame(keyframe) {
+    };
+
     // copy struct TODO
 
     char *data() const override{
@@ -141,6 +147,9 @@ public:
 
 private:
     std::string strBuf;
+    int type;
+    bool iskeyFrame;
+    uint32_t timeStamp = 0;
 };
 
 class RtmpPacket : public Buffer{

@@ -22,6 +22,8 @@
 #include "Network/Socket.h"
 #include "Util/ResourcePool.h"
 
+#include "libflv/flv-header.h"
+
 using namespace std;
 using namespace toolkit;
 
@@ -30,13 +32,25 @@ namespace mediakit {
 class FlvProtocol {
 public:
     FlvProtocol();
-    void onParseFlv(const char *pcRawData,int iSize);
+    void onParseFlv(const char *pcRawData,int iSize); // init first tag; get frame
 
-private:
-    string _strRcvBuf;
+    virtual void onFlvFrame(FlvPacket &frameData); // parsed frame; called by upper
+
+public:
+    string _strRcvBuf; // raw buff
     bool is_first_audio_init;
     bool is_first_video_init;
     bool is_first_script_init;
+    bool is_first_flv_pack;
+
+    flv_header_t m_flvHeader;
+    string _first_audio_tag;
+    string _first_video_tag;
+    string _first_script_tag;
+
+    uint8_t* frame_start;
+    int frame_len;
+    int frame_type;
 };
 
 class RtmpProtocol {

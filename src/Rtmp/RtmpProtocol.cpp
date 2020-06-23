@@ -60,21 +60,69 @@ static string openssl_HMACsha256(const void *key,unsigned int key_len,
 
 namespace mediakit {
 
-void flv_data_parsed(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags) {
+static int flv_data_parsed(void* param, int codec, const void* data, size_t bytes, uint32_t pts, uint32_t dts, int flags) {
     FlvProtocol* th = static_cast<FlvProtocol*>(param);
-    th->
-    
+    FlvPacket pack(th->frame_start, th->frame_len, th->frame_type, flags);
+    th->onFlvFrame(pack);
+    return -1;
 }
 
 FlvProtocol::FlvProtocol():
   is_first_audio_init(false),
   is_first_video_init(false),
   is_first_script_init(false) {
+    is_first_flv_pack = true;
 }
 
 void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
     _strRcvBuf.append(pcRawData, iSize);
-    flv_parser_input(type, pcRawData, iSize, firstTagTimeStamp, flv_data_parsed, this);
+    uint8_t* pos = (uint8_t*)pcRawData;
+    int len = iSize;
+    if (is_first_flv_pack) {
+        is_first_flv_pack = false;
+        int header_size = flv_header_read(&m_flvHeader, pos, len);
+        pos += header_size;
+        len -= header_size;
+    }
+
+    flv_tag_header_t tag_header;
+
+    while (1) {
+        uint8_t* frame_start1 = pos;
+        int header_size = flv_tag_header_read(&tag_header, pos, len);
+        if (header_size == -1) {
+            return;
+        }
+
+
+        pos += header_size;
+        len -= header_size;
+
+        if (tag_header.type == 18) { // script
+
+        } else if (tag_header.type == 9) { // video
+            flv_video_tag_header_t vtag_header;
+            int header_size = flv_video_tag_header_read(&vtag_header, pos, len);
+            if (header_size == -1) {
+                return;
+            }
+            pos += header_size;
+            len -= header_size;
+            flv_parser_input(9, (void*)pos, len, tag_header.timestamp, flv_data_parsed, (void*)this);
+
+            frame_start = frame_start1;
+            frame_len = 11 + tag_header.size;
+            frame_type = 9;
+
+        } else if (tag_header.type == 8) { // audio
+
+        } else {
+            return;
+        }
+
+    }
+
+    flv_parser_input(pcRawData[], pcRawData, iSize, firstTagTimeStamp, flv_data_parsed, this);
 }
 
 
@@ -86,6 +134,7 @@ RtmpProtocol::RtmpProtocol() {
         handle_C0C1();
     };
 }
+
 RtmpProtocol::~RtmpProtocol() {
     reset();
 }
