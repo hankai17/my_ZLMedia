@@ -108,7 +108,8 @@ int domain(const string &playUrl, const string &pushUrl) {
 
 int main(int argc, char *argv[]) {
     //return domain("rtmp://live.hkstv.hk.lxdns.com/live/hks1", "rtsp://127.0.0.1/live/rtsp_push");
-    return domain("http://ivi.bupt.edu.cn/hls/cctv1hd.m3u8", "http://127.0.0.1/live/m3u8_push");
+    //return domain("http://10.0.120.194/myapp/0.flv", "http://127.0.0.1/myapp/0");
+    return domain("http://10.0.120.194:80/myapp/0.flv", "http://127.0.0.1/myapp/0");
 }
 
 

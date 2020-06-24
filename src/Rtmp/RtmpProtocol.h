@@ -32,11 +32,13 @@ namespace mediakit {
 class FlvProtocol {
 public:
     FlvProtocol();
-    void onParseFlv(const char *pcRawData,int iSize); // init first tag; get frame
-
-    virtual void onFlvFrame(FlvPacket &frameData); // parsed frame; called and override by upper
+    void onParseFlv(const char *pcRawData,int iSize); // init first tag; get frame // 传入rawbuf
 
 public:
+    virtual void onFlvFrame(FlvPacket &frameData) = 0; // parsed frame; called and override by upper // 传出framePack
+
+public:
+    int tag_num = 0;
     string _strRcvBuf; // raw buff
     bool is_first_audio_init;
     bool is_first_video_init;

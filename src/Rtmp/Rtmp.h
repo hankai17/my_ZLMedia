@@ -192,7 +192,7 @@ public:
 public:
     RtmpPacket() = default;
     RtmpPacket(const RtmpPacket &that) = delete;
-    RtmpPacket &operator=(const RtmpPacket &that) = delete;
+    //RtmpPacket &operator=(const RtmpPacket &that) = delete;
     RtmpPacket &operator=(RtmpPacket &&that) = delete;
 
     RtmpPacket(RtmpPacket &&that){

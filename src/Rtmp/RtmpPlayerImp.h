@@ -24,12 +24,37 @@ using namespace mediakit::Client;
 
 namespace mediakit {
 
-class FlvPlayerImp : public PlayerImp<FlvPlayer, FlvProtocol> {
+class FlvPlayerImp : public PlayerImp<FlvPlayer, FlvDemuxer> {
 public:
     typedef std::shared_ptr<FlvPlayerImp> Ptr;
 
+    FlvPlayerImp(const EventPoller::Ptr &poller) : PlayerImp<FlvPlayer, FlvDemuxer>(poller){};
+    virtual ~FlvPlayerImp(){
+        DebugL<<endl;
+    };
+
+protected:
+    virtual void onMediaData(const FlvPacket::Ptr &frameData) { // 接受底层传过来的数据
+        if(_pFlvMediaSrc){
+            /*
+            if(!_set_meta_data && !chunkData->isCfgFrame()){
+                _set_meta_data = true;
+                _pRtmpMediaSrc->setMetaData(TitleMeta().getMetadata());
+            }
+            */
+            _pFlvMediaSrc->onWrite(frameData);
+        }
+        /*
+        if(!_delegate){
+            //这个流没有metadata
+            _delegate.reset(new RtmpDemuxer());
+        }
+        _delegate->inputRtmp(chunkData);
+        */
+    }
+
 private:
-    FlvMediaSource::Ptr _pFlvMediaSrc;
+    FlvMediaSource::Ptr _pFlvMediaSrc; // 1 构造一个flvMediaSource 实现onWrite功能
     bool _set_meta_data = false;
 };
 

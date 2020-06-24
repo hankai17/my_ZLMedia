@@ -19,7 +19,7 @@ using namespace mediakit::Client;
 namespace mediakit {
 
 
-FlvPlayer::FlvPlayer(const EventPoller::Ptr &poller) : TcpClient(poller) {
+FlvPlayer::FlvPlayer(const EventPoller::Ptr &poller) {
 }
 
 FlvPlayer::~FlvPlayer() {
@@ -90,6 +90,7 @@ void FlvPlayer::onPlayResult_l(const SockException &ex , bool handshakeCompleted
 
 void FlvPlayer::play(const string& strUrl) {
     //teardown();
+    _strTcUrl = strUrl;
     string strHost = FindField(strUrl.data(), "://", "/");
     _strApp = 	FindField(strUrl.data(), (strHost + "/").data(), "/");
     _strStream = FindField(strUrl.data(), (strHost + "/" + _strApp + "/").data(), NULL);
@@ -127,18 +128,21 @@ void FlvPlayer::play(const string& strUrl) {
     },getPoller()));
 
     _metadata_got = false;
-    startConnect(strHost, iPort , playTimeOutSec);
+    //startConnect(strHost, iPort , playTimeOutSec);
+    setMethod("GET");
+    sendRequest(strUrl, 10);
 }
 
+//void FlvPlayer::onConnect(const SockException &ex) {
+//}
+
+void FlvPlayer::onResponseBody(const char *buf,int64_t size,int64_t recvedSize,int64_t totalSize) {
+    onParseFlv(buf, size);
+}
+
+/*
 void FlvPlayer::onRecv(const Buffer::Ptr &pBuf){
     try {
-        /*
-        if(_benchmark_mode && !_pPlayTimer){
-            //在性能测试模式下，如果rtmp握手完毕后，不再解析rtmp包
-            _mediaTicker.resetTime();
-            return;
-        }
-        */
         onParseFlv(pBuf->data(), pBuf->size());
     } catch (exception &e) {
         SockException ex(Err_other, e.what());
@@ -146,6 +150,7 @@ void FlvPlayer::onRecv(const Buffer::Ptr &pBuf){
         onPlayResult_l(ex, !_pPlayTimer);
     }
 }
+ */
 
 //////////////////////////////////////////////////////////////////////////////////
 

@@ -24,12 +24,14 @@
 #include "Network/Socket.h"
 #include "Network/TcpClient.h"
 
+#include "Http/HttpClient.h"
+
 using namespace toolkit;
 using namespace mediakit::Client;
 
 namespace mediakit {
 
-class FlvPlayer : public PlayerBase, public TcpClient, public FlvProtocol {
+class FlvPlayer : public PlayerBase, public HttpClient, public FlvProtocol {
 public:
     typedef std::shared_ptr<FlvPlayer> ptr;
     FlvPlayer(const EventPoller::Ptr &poller);
@@ -39,14 +41,16 @@ public:
 
 protected:
     void play(const string &strUrl) override; // 1
+    //void onConnect(const SockException &ex) override;
 
 protected:
     //form Tcpclient
-    void onRecv(const Buffer::Ptr &pBuf) override; // 2
+    //void onRecv(const Buffer::Ptr &pBuf) override; // 2   // 3 FlvProtocol::onParseFlv实现rawbuf->framePack
+    void onResponseBody(const char *buf,int64_t size,int64_t recvedSize,int64_t totalSize) override;
 
 protected:
     //from FlvProtocol
-    void onFlvFrame(FlvPacket &frameData) override;
+    void onFlvFrame(FlvPacket &frameData) override; // 上层本层接受
 
 protected:
     virtual void onMediaData(const FlvPacket::Ptr &frameData) = 0;

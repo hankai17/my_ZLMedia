@@ -33,11 +33,12 @@ using namespace toolkit;
 #define RTMP_GOP_SIZE 512
 namespace mediakit {
 
-class FlvMediaSource : public MediaSource, public RingDelegate<FlvPacket::Ptr>, public PacketCache<FlvPacket> {
+//class FlvMediaSource : public MediaSource, public RingDelegate<FlvPacket::Ptr>, public PacketCache<FlvPacket> {
+class FlvMediaSource : public MediaSource, public RingDelegate<FlvPacket::Ptr> {
 public:
     typedef std::shared_ptr<FlvMediaSource> Ptr;
-    typedef std::shared_ptr<List<FlvPacket::Ptr> > RingDataType;
-    typedef RingBuffer<RingDataType> RingType;
+    //typedef std::shared_ptr<List<FlvPacket::Ptr> > RingDataType;
+    typedef RingBuffer<FlvPacket::Ptr> RingType;
 
     FlvMediaSource(const string &vhost,
                     const string &app,
@@ -48,12 +49,12 @@ public:
 
     virtual ~FlvMediaSource() {}
 
-    const RingType::Ptr &getRing() const {
+    const RingBuffer<FlvPacket::Ptr>::Ptr &getRing() const {
         return _ring;
     }
 
     int readerCount() override {
-        return _ring ? _ring->readerCount() : 0;
+        return _ring->readerCount();
     }
 
     const AMFValue &getMetaData() const {
@@ -97,7 +98,8 @@ public:
         }
         // Refer before 04 TODO
         //PacketCache<RtmpPacket>::inputPacket(pkt->typeId == MSG_VIDEO, pkt, key);
-
+        //_ring->write(pkt, _have_video ? pkt->iskeyFrame : true);
+        _ring->write(pkt, pkt->iskeyFrame);
     }
 
 private:
@@ -105,7 +107,8 @@ private:
     //bool _have_video = false;
     mutable recursive_mutex _mtx;
     AMFValue _metadata;
-    RingType::Ptr _ring;
+    //RingType::Ptr _ring;
+    RingBuffer<FlvPacket::Ptr>::Ptr _ring;
     unordered_map<int, uint32_t> _track_stamps_map;
     unordered_map<int, FlvPacket::Ptr> _config_frame_map;
 };

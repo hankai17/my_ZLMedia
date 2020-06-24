@@ -58,6 +58,10 @@ PlayerBase::Ptr PlayerBase::createPlayer(const EventPoller::Ptr &poller,const st
         return PlayerBase::Ptr(new HlsPlayerImp(poller),releasePlayer);
     }
 
+    if ((strcasecmp("http",prefix.data()) == 0 || strcasecmp("https",prefix.data()) == 0) && end_of(url, ".flv")) {
+        return PlayerBase::Ptr(new FlvPlayerImp(poller), releasePlayer);
+    }
+
     return PlayerBase::Ptr(new RtspPlayerImp(poller),releasePlayer);
 }
 

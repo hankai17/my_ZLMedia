@@ -13,6 +13,10 @@
 #include "Util/util.h"
 #include "Util/onceToken.h"
 #include "Thread/ThreadPool.h"
+
+#include <sstream>
+#include <iomanip>
+
 using namespace toolkit;
 
 #ifdef ENABLE_OPENSSL
@@ -81,12 +85,12 @@ static int flv_data_parsed(void* param, int codec, const void* data, size_t byte
             th->is_first_audio_init = true;
             th->_first_audio_tag = std::move(pack);
         }
-
     }
 
-    th->onFlvFrame(pack);
+    FlvPacket pack1(th->tag_start, th->tag_len, th->tag_type, flags);
+    th->onFlvFrame(pack1);
 
-    return -1;
+    return 0;
 }
 
 FlvProtocol::FlvProtocol():
@@ -96,65 +100,105 @@ FlvProtocol::FlvProtocol():
     is_first_flv_pack = true;
 }
 
+static std::string to_hex(const std::string& str) {
+    std::stringstream ss;
+    for(size_t i = 0; i < str.size(); ++i) {
+        ss << std::setw(2) << std::setfill('0') << std::hex
+           << (int)(uint8_t)str[i];
+    }
+    return ss.str();
+}
+
+
 void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
     _strRcvBuf.append(pcRawData, iSize);
 
-    uint8_t* pos = (uint8_t*)&_strRcvBuf[0];
     int len = iSize;
     if (is_first_flv_pack) {
+        if (len < 5) {
+            return;
+        }
+        int header_size = flv_header_read(&m_flvHeader, (uint8_t*)&_strRcvBuf[0], len);
+        if (header_size == -1 || iSize < 13) {
+            return;
+        }
         is_first_flv_pack = false;
-        int header_size = flv_header_read(&m_flvHeader, pos, len);
-        pos += header_size;
-        len -= header_size;
+        std::cout << "get FLV" << std::endl;
+        _strRcvBuf.erase(0, 13);
+    }
+    if (_strRcvBuf.size() == 0) {
+        return;
     }
 
     flv_tag_header_t tag_header;
+    std::cout << "tag_num: " << tag_num << " _strRcvBuf.size: " << _strRcvBuf.size() << " " << to_hex(string((char*)&_strRcvBuf[0], 11)) << std::endl;
 
-    while (1) {
-        uint8_t* frame_start = pos;
-        int header_size = flv_tag_header_read(&tag_header, pos, len);
-        if (header_size == -1) {
+    while (_strRcvBuf.size() > 0) {
+        //std::cout << "in while _strRcvBuf.size: " << _strRcvBuf.size() << std::endl;
+
+        if (_strRcvBuf.size() < 11) {
+            break;
+        }
+        int header_size = flv_tag_header_read(&tag_header, (uint8_t*)&_strRcvBuf[0], _strRcvBuf.size()); // normal equal 11
+        if (header_size == -1 || header_size != 11) {
             return;
         }
 
+        if (_strRcvBuf.size() - 11 <= 0) {
+            return;
+        }
 
-        pos += header_size;
-        len -= header_size;
+        if (tag_header.size > _strRcvBuf.size() - 11 - 4) {
+            return;
+        }
+
+        uint8_t* pos = (uint8_t*)&_strRcvBuf[0];
+        int len = _strRcvBuf.size();
+        tag_start = pos;
+        tag_len = 11 + tag_header.size;
 
         if (tag_header.type == 18) { // script
+            //flv_script_tag_header_t stag_header;
+            //int header_size = flv_script_tag_header_read(&stag_header, pos, len);
+            //if (header_size == -1) {
+                //return;
+            //}
+            tag_type = 18;
+
+            flv_parser_input(18, (void*)(pos), len, tag_header.timestamp, flv_data_parsed, (void*)this);
+            _strRcvBuf.erase(0, 11 + tag_header.size + 4);
+            tag_num++;
         } else if (tag_header.type == 9) { // video
-            flv_video_tag_header_t vtag_header;
-            int header_size = flv_video_tag_header_read(&vtag_header, pos, len);
-            if (header_size == -1) {
-                return;
-            }
-            pos += header_size;
-            len -= header_size;
-            flv_parser_input(9, (void*)pos, len, tag_header.timestamp, flv_data_parsed, (void*)this);
-
-            tag_start = frame_start;
-            tag_len = 11 + tag_header.size;
             tag_type = 9;
-        } else if (tag_header.type == 8) { // audio
-            flv_audio_tag_header_t atag_header;
-            int header_size = flv_audio_tag_header_read(&atag_header, pos, len);
-            if (header_size == -1) {
+            flv_video_tag_header_t vtag_header;
+            int header_size = flv_video_tag_header_read(&vtag_header, pos + 11, len - 11);
+            if (header_size == -1 || header_size != 5) {
                 return;
             }
 
-            pos += header_size;
-            len -= header_size;
-            flv_parser_input(9, (void*)pos, len, tag_header.timestamp, flv_data_parsed, (void*)this);
-
-            tag_start = frame_start;
-            tag_len = 11 + tag_header.size;
+            //flv_parser_input(9, (void*)(pos + 11 + 5), len - 11 - 5, tag_header.timestamp, flv_data_parsed, (void*)this);
+            flv_parser_input(9, (void*)(pos), len, tag_header.timestamp, flv_data_parsed, (void*)this);
+            _strRcvBuf.erase(0, 11 + tag_header.size + 4);
+            tag_num++;
+        } else if (tag_header.type == 8) { // audio
             tag_type = 8;
+            flv_audio_tag_header_t atag_header;
+            if (len - 11 < 2 || len - 11 < 0) {
+                break;
+            }
+            int header_size = flv_audio_tag_header_read(&atag_header, pos + 11, len - 11);
+            if (header_size == -1 || header_size != 2) {
+                return;
+            }
+
+            //flv_parser_input(8, (void*)(pos + 11 + 5), len - 11 - 5, tag_header.timestamp, flv_data_parsed, (void*)this);
+            flv_parser_input(8, (void*)(pos), len, tag_header.timestamp, flv_data_parsed, (void*)this);
+            _strRcvBuf.erase(0, 11 + tag_header.size + 4);
+            tag_num++;
         } else {
             return;
         }
-
     }
-
 }
 
 

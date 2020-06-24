@@ -23,6 +23,31 @@ using namespace toolkit;
 
 namespace mediakit {
 
+class FlvDemuxer : public Demuxer{
+public:
+    typedef std::shared_ptr<FlvDemuxer> Ptr;
+
+    FlvDemuxer() = default;
+    virtual ~FlvDemuxer() = default;
+
+    bool loadMetaData(const AMFValue &metadata) { return false; };
+
+    /**
+     * 开始解复用
+     * @param pkt rtmp包
+     * @return true 代表是i帧
+     */
+    bool inputFlv(const FlvPacket::Ptr &pkt) { return false; };
+private:
+    void makeVideoTrack(const AMFValue &val) { return; };
+    void makeAudioTrack(const AMFValue &val, int sample_rate, int channels, int sample_bit) { return; };
+private:
+    bool _tryedGetVideoTrack = false;
+    bool _tryedGetAudioTrack = false;
+    RtmpCodec::Ptr _audioRtmpDecoder;
+    RtmpCodec::Ptr _videoRtmpDecoder;
+};
+
 class RtmpDemuxer : public Demuxer{
 public:
     typedef std::shared_ptr<RtmpDemuxer> Ptr;

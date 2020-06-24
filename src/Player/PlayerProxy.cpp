@@ -133,6 +133,9 @@ void PlayerProxy::play(const string &strUrlTmp) {
         if(_bEnableRtmp){
             mediaSource = std::make_shared<RtmpMediaSource>(_strVhost,_strApp,_strSrc);
         }
+    } else {
+        //flv
+        mediaSource = std::make_shared<FlvMediaSource>(_strVhost, _strApp, _strSrc);
     }
     if(mediaSource){
         setMediaSouce(mediaSource);
