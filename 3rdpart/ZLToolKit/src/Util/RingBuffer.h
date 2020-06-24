@@ -127,6 +127,7 @@ public:
      * @return 是否触发重置环形缓存大小
      */
     inline void write(const T &in, bool is_key = true) {
+        //std::cout << "storage current_size: " << _data_cache.size() << " key: " << is_key << std::endl;
         if (is_key) {
             //遇到I帧，那么移除老数据
             _data_cache.clear();

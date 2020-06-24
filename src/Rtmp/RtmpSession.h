@@ -23,9 +23,18 @@
 #include "Network/TcpSession.h"
 #include "Common/Stamp.h"
 
+#include "Http/HttpSession.h"
+
 using namespace toolkit;
 
 namespace mediakit {
+
+class FlvSession : public HttpSession, public FlvProtocol, public MediaSourceEvent {
+public:
+    typedef std::shared_ptr<FlvSession> Ptr;
+    FlvSession(const Socket::Ptr &_sock);
+    virtual ~FlvSession();
+};
 
 class RtmpSession: public TcpSession ,public  RtmpProtocol , public MediaSourceEvent{
 public:

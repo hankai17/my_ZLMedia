@@ -136,7 +136,7 @@ void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
     while (_strRcvBuf.size() > 0) {
         //std::cout << "in while _strRcvBuf.size: " << _strRcvBuf.size() << std::endl;
 
-        if (_strRcvBuf.size() < 11) {
+        if (_strRcvBuf.size() <= 11 + 4) {
             break;
         }
         int header_size = flv_tag_header_read(&tag_header, (uint8_t*)&_strRcvBuf[0], _strRcvBuf.size()); // normal equal 11
@@ -144,11 +144,8 @@ void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
             return;
         }
 
-        if (_strRcvBuf.size() - 11 <= 0) {
-            return;
-        }
-
         if (tag_header.size > _strRcvBuf.size() - 11 - 4) {
+            std::cout << tag_header.size  << " > " << _strRcvBuf.size() - 11 - 4 << std::endl;
             return;
         }
 
@@ -177,13 +174,16 @@ void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
             }
 
             //flv_parser_input(9, (void*)(pos + 11 + 5), len - 11 - 5, tag_header.timestamp, flv_data_parsed, (void*)this);
-            flv_parser_input(9, (void*)(pos), len, tag_header.timestamp, flv_data_parsed, (void*)this);
+            flv_parser_input(9, (void*)(pos + 11), len - 11, tag_header.timestamp, flv_data_parsed, (void*)this);
             _strRcvBuf.erase(0, 11 + tag_header.size + 4);
             tag_num++;
         } else if (tag_header.type == 8) { // audio
             tag_type = 8;
             flv_audio_tag_header_t atag_header;
-            if (len - 11 < 2 || len - 11 < 0) {
+            if (len > 99999) {
+                std::cout << "len to long 99999: " << len << std::endl;
+            }
+            if (len - 11 < 2 || len - 11 <= 0) {
                 break;
             }
             int header_size = flv_audio_tag_header_read(&atag_header, pos + 11, len - 11);
@@ -192,7 +192,7 @@ void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
             }
 
             //flv_parser_input(8, (void*)(pos + 11 + 5), len - 11 - 5, tag_header.timestamp, flv_data_parsed, (void*)this);
-            flv_parser_input(8, (void*)(pos), len, tag_header.timestamp, flv_data_parsed, (void*)this);
+            flv_parser_input(8, (void*)(pos + 11), len - 11, tag_header.timestamp, flv_data_parsed, (void*)this);
             _strRcvBuf.erase(0, 11 + tag_header.size + 4);
             tag_num++;
         } else {

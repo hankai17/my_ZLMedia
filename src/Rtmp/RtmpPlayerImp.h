@@ -35,6 +35,9 @@ public:
 
 protected:
     virtual void onMediaData(const FlvPacket::Ptr &frameData) { // 接受底层传过来的数据
+        if(!_pFlvMediaSrc) {
+            _pFlvMediaSrc = dynamic_pointer_cast<FlvMediaSource>(_pMediaSrc);
+        }
         if(_pFlvMediaSrc){
             /*
             if(!_set_meta_data && !chunkData->isCfgFrame()){

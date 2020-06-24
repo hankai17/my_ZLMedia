@@ -92,9 +92,12 @@ public:
             _ring = std::make_shared<RingType>(_ring_size,std::move(lam));
             //onReaderChanged(0);
 
+            regist();
+            /*
             if(_metadata){
                 regist();
             }
+             */
         }
         // Refer before 04 TODO
         //PacketCache<RtmpPacket>::inputPacket(pkt->typeId == MSG_VIDEO, pkt, key);
