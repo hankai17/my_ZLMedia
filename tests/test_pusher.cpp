@@ -17,6 +17,9 @@
 #include "Rtmp/RtmpPusher.h"
 #include "Common/config.h"
 #include "Pusher/MediaPusher.h"
+#include "Network/TcpServer.h"
+#include "Http/HttpSession.h"
+#include "Rtmp/RtmpSession.h"
 
 using namespace std;
 using namespace toolkit;
@@ -110,7 +113,23 @@ int main(int argc, char *argv[]) {
     //return domain("rtmp://live.hkstv.hk.lxdns.com/live/hks1", "rtsp://127.0.0.1/live/rtsp_push");
     //return domain("http://10.0.120.194/myapp/0.flv", "http://127.0.0.1/myapp/0");
     //return domain("http://10.0.120.194:80/myapp/0.flv", "http://127.0.0.1/myapp/0");
-    return domain("http://192.168.0.111:80/myapp/0.flv", "http://127.0.0.1/myapp/0");
+
+    TcpServer::Ptr flvSrv(new TcpServer());
+    flvSrv->start<FlvSession>(90);//默认80
+
+    TcpServer::Ptr httpSrv(new TcpServer());
+    httpSrv->start<HttpSession>(91);//默认80
+
+    //TcpServer::Ptr rtmpSrv(new TcpServer());
+    //rtmpSrv->start<RtmpSession>(9001);//默认1935
+
+    //domain("http://192.168.0.111:80/myapp/0.flv", "http://127.0.0.1/myapp/0");
+
+    static semaphore sem;
+    signal(SIGINT, [](int) { sem.post(); });// 设置退出信号
+    signal(SIGHUP, [](int) {  });
+    sem.wait();
+
 }
 
 

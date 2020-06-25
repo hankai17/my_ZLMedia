@@ -29,11 +29,42 @@ using namespace toolkit;
 
 namespace mediakit {
 
-class FlvSession : public HttpSession, public FlvProtocol, public MediaSourceEvent {
+class FlvSession : public TcpSession, public FlvProtocol, public MediaSourceEvent {
 public:
     typedef std::shared_ptr<FlvSession> Ptr;
     FlvSession(const Socket::Ptr &_sock);
     virtual ~FlvSession();
+
+    void onRecv(const Buffer::Ptr& pbuf) override;
+    virtual void onError(const SockException &err) override;
+    virtual void onManager() override;
+
+    void onSendMedia(const FlvPacket::Ptr &pkt);
+    void onSendRawData(const Buffer::Ptr &buffer) {
+        _ui64TotalBytes += buffer->size();
+        send(buffer);
+    }
+
+    bool close(MediaSource &sender,bool force) { return false; }
+    int totalReaderCount(MediaSource &sender) { return 1; }
+
+    void onFlvFrame(FlvPacket &frameData) { return; }
+private:
+    bool once_flag = false;
+    std::string _strTcUrl;
+    MediaInfo _mediaInfo;
+    double _dNowReqID = 0;
+    bool _set_meta_data = false;
+    Ticker _ticker;//数据接收时间
+    FlvMediaSource::RingType::RingReader::Ptr _pRingReader;
+    //std::shared_ptr<FlvMediaSourceImp> _pPublisherSrc;
+    std::shared_ptr<FlvMediaSource> _pPublisherSrc;
+    std::weak_ptr<FlvMediaSource> _pPlayerSrc;
+    //时间戳修整器
+    Stamp _stamp[2];
+    //消耗的总流量
+    uint64_t _ui64TotalBytes = 0;
+    bool _paused = false;
 };
 
 class RtmpSession: public TcpSession ,public  RtmpProtocol , public MediaSourceEvent{

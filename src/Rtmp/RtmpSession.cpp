@@ -13,6 +13,162 @@
 #include "Util/onceToken.h"
 namespace mediakit {
 
+FlvSession::FlvSession(const Socket::Ptr &_sock) : TcpSession(_sock) {
+   DebugP(this);
+   GET_CONFIG(uint32_t,keep_alive_sec,Rtmp::kKeepAliveSecond);
+    _sock->setSendTimeOutSecond(keep_alive_sec);
+    //起始接收buffer缓存设置为4K，节省内存
+    _sock->setReadBuffer(std::make_shared<BufferRaw>(4 * 1024));
+}
+
+FlvSession::~FlvSession() {
+   DebugP(this);
+}
+
+// 1 parser header get url & find url in MS if has will attach it
+void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
+    _ticker.resetTime();
+    try {
+        _ui64TotalBytes += pBuf->size();
+        //onParseRtmp(pBuf->data(), pBuf->size());
+        const char* pos = pBuf->data();
+        int size = pBuf->size();
+        std::string req(pos, size);
+        std::string fline = req.substr(0, req.find("\r\n"));
+        fline = fline.substr(fline.find(' '));
+        fline = fline.substr(0, fline.find(' '));
+
+        std::string vhost = "127.0.0.1";
+        std::string app = "myapp";
+        std::string stream = "0";
+
+        auto src = dynamic_pointer_cast<FlvMediaSource>(MediaSource::find(HTTP_SCHEMA,
+                                                                           vhost,
+                                                                           app,
+                                                                           stream));
+        if(src) {
+            //src->modifyReaderCount(true);
+            _pRingReader = src->getRing()->attach(EventPollerPool::Instance().getPoller());
+            /*
+            _pRingReader->setDetachCB([added](){
+                //HlsMediaSource已经销毁
+                *added = false;
+            });
+             */
+            weak_ptr<FlvSession> weakSelf = dynamic_pointer_cast<FlvSession>(shared_from_this());
+            _pRingReader->setReadCB([weakSelf](const FlvPacket::Ptr &pkt) {
+                auto strongSelf = weakSelf.lock();
+                if (!strongSelf) {
+                    return;
+                }
+                /*
+                if (strongSelf->_paused) {
+                    return;
+                }
+                 */
+                int i = 0;
+                int size = pkt->size();
+                strongSelf->setSendFlushFlag(false);
+                /*
+                pkt->for_each([&](const RtmpPacket::Ptr &rtmp) {
+                    if (++i == size) {
+                        strongSelf->setSendFlushFlag(true);
+                    }
+                    strongSelf->onSendMedia(rtmp);
+                });
+                 */
+                strongSelf->onSendMedia(pkt);
+            });
+
+            _pRingReader->setDetachCB([weakSelf]() {
+                auto strongSelf = weakSelf.lock();
+                if (!strongSelf) {
+                    return;
+                }
+                strongSelf->shutdown(SockException(Err_shutdown, "rtmp ring buffer detached"));
+            });
+            _pPlayerSrc = src;
+            if (src->totalReaderCount() == 1) {
+                src->seekTo(0);
+            }
+            //提高服务器发送性能
+            //setSocketFlags();
+        } else {
+            // player->play(url);
+        }
+    } catch (exception &e) {
+        shutdown(SockException(Err_shutdown, e.what()));
+    }
+
+}
+
+void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
+    //rtmp播放器时间戳从零开始
+    /*
+    int64_t dts_out;
+    _stamp[pkt->typeId % 2].revise(pkt->timeStamp, 0, dts_out, dts_out);
+     */
+    //sendRtmp(pkt->typeId, pkt->streamId, pkt, dts_out, pkt->chunkId);
+    if (!once_flag) {
+        std::string flv_base_header = (char*)&m_flvHeader;
+        std::string script_tag = _first_script_tag.toString();
+
+        BufferRaw::Ptr bufferHeader = obtainBuffer();
+        bufferHeader->setCapacity(sizeof(flv_base_header.size()) );
+        bufferHeader->setSize(sizeof(flv_base_header.size()) );
+        strncpy(bufferHeader->data(), flv_base_header.c_str(), (flv_base_header.size()));
+        onSendRawData(bufferHeader);
+
+        bufferHeader->setCapacity(sizeof(script_tag.size()) );
+        bufferHeader->setSize(sizeof(script_tag.size()) );
+        strncpy(bufferHeader->data(), script_tag.c_str(), (script_tag.size()));
+        onSendRawData(bufferHeader);
+    }
+
+    // send cachelist
+    BufferRaw::Ptr bufferHeader = obtainBuffer();
+    bufferHeader->setCapacity(pkt->size());
+    bufferHeader->setSize(pkt->size());
+    strncpy(bufferHeader->data(), pkt->toString().c_str(), pkt->size());
+    onSendRawData(bufferHeader);
+}
+
+void FlvSession::onError(const SockException &err) {
+    bool isPlayer = !_pPublisherSrc;
+    uint64_t duration = _ticker.createdTime()/1000;
+    WarnP(this) << (isPlayer ? "RTMP播放器(" : "RTMP推流器(")
+                << _mediaInfo._vhost << "/"
+                << _mediaInfo._app << "/"
+                << _mediaInfo._streamid
+                << ")断开:" << err.what()
+                << ",耗时(s):" << duration;
+
+    //流量统计事件广播
+    GET_CONFIG(uint32_t,iFlowThreshold,General::kFlowThreshold);
+
+    if(_ui64TotalBytes > iFlowThreshold * 1024){
+        NoticeCenter::Instance().emitEvent(Broadcast::kBroadcastFlowReport, _mediaInfo, _ui64TotalBytes, duration, isPlayer, static_cast<SockInfo &>(*this));
+    }
+}
+
+void FlvSession::onManager() {
+    GET_CONFIG(uint32_t,handshake_sec,Rtmp::kHandshakeSecond);
+    GET_CONFIG(uint32_t,keep_alive_sec,Rtmp::kKeepAliveSecond);
+
+    if (_ticker.createdTime() > handshake_sec * 1000) {
+        if (!_pRingReader && !_pPublisherSrc) {
+            shutdown(SockException(Err_timeout,"illegal connection"));
+        }
+    }
+    if (_pPublisherSrc) {
+        //publisher
+        if (_ticker.elapsedTime() > keep_alive_sec * 1000) {
+            shutdown(SockException(Err_timeout,"recv data from rtmp pusher timeout"));
+        }
+    }
+}
+
+
 RtmpSession::RtmpSession(const Socket::Ptr &pSock) : TcpSession(pSock) {
     DebugP(this);
     GET_CONFIG(uint32_t,keep_alive_sec,Rtmp::kKeepAliveSecond);
