@@ -25,6 +25,8 @@ using namespace toolkit;
 
 namespace mediakit {
 
+//add proxy
+
 class HttpSession: public TcpSession,
                    public FlvMuxer,
                    public HttpRequestSplitter,
@@ -123,6 +125,29 @@ private:
 
 
 typedef TcpSessionWithSSL<HttpSession> HttpsSession;
+
+/*
+ * should public socket
+class Tunnel : public std::enable_shared_from_this<Tunnel> {
+public:
+    Tunnel(const std::string& host, TcpSession::Ptr session):
+            _url(host),
+            _client(session) {
+        _ori = make_shared<HttpSession>(new Socket());
+    }
+    ~Tunnel() {};
+
+    void setup() {
+        _client->onRecv()
+    }
+
+private:
+    std::string        _url;
+    TcpSession::Ptr    _client;
+    TcpSession::Ptr    _ori;
+
+};
+ */
 
 } /* namespace mediakit */
 

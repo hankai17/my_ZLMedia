@@ -25,6 +25,7 @@ using namespace std;
 using namespace toolkit;
 using namespace mediakit;
 
+
 //推流器，保持强引用
 MediaPusher::Ptr pusher;
 Timer::Ptr g_timer;
@@ -110,6 +111,10 @@ int domain(const string &playUrl, const string &pushUrl) {
 
 
 int main(int argc, char *argv[]) {
+    Logger::Instance().add(std::make_shared<ConsoleChannel>());
+    Logger::Instance().add(std::make_shared<FileChannel>());
+    Logger::Instance().setWriter(std::make_shared<AsyncLogWriter>());
+
     //return domain("rtmp://live.hkstv.hk.lxdns.com/live/hks1", "rtsp://127.0.0.1/live/rtsp_push");
     //return domain("http://10.0.120.194/myapp/0.flv", "http://127.0.0.1/myapp/0");
     //return domain("http://10.0.120.194:80/myapp/0.flv", "http://127.0.0.1/myapp/0");

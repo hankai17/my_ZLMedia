@@ -24,10 +24,13 @@
 #include "Common/Stamp.h"
 
 #include "Http/HttpSession.h"
+#include "Player/PlayerProxy.h"
 
 using namespace toolkit;
 
 namespace mediakit {
+
+    static unordered_map<string ,PlayerProxy::Ptr> s_proxyMap;
 
 class FlvSession : public TcpSession, public FlvProtocol, public MediaSourceEvent {
 public:
@@ -35,9 +38,11 @@ public:
     FlvSession(const Socket::Ptr &_sock);
     virtual ~FlvSession();
 
-    void onRecv(const Buffer::Ptr& pbuf) override;
+
+    // rewrite TcpSession
+    virtual void onRecv(const Buffer::Ptr& pbuf) override;
     virtual void onError(const SockException &err) override;
-    virtual void onManager() override;
+    void onManager() override;
 
     void onSendMedia(const FlvPacket::Ptr &pkt);
     void onSendRawData(const Buffer::Ptr &buffer) {

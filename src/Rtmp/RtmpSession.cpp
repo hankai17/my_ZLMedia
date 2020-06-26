@@ -11,6 +11,7 @@
 #include "RtmpSession.h"
 #include "Common/config.h"
 #include "Util/onceToken.h"
+#include "Player/PlayerProxy.h"
 namespace mediakit {
 
 FlvSession::FlvSession(const Socket::Ptr &_sock) : TcpSession(_sock) {
@@ -94,7 +95,15 @@ void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
             //提高服务器发送性能
             //setSocketFlags();
         } else {
-            // player->play(url);
+            auto poller = EventPollerPool::Instance().getPoller();
+            PlayerProxy::Ptr player(new PlayerProxy(DEFAULT_VHOST, "app", "stream",false,false,false,false, -1, poller));
+            player->play("http://192.168.0.111:80/myapp/0.flv");
+            s_proxyMap["myapp"] = player;
+
+            NoticeCenter::Instance().addListener(nullptr, Broadcast::kBroadcastMediaChanged,
+                                                 [poller](BroadcastMediaChangedArgs) {
+                                                     //媒体源"app/stream"已经注册，这时方可新建一个RtmpPusher对象并绑定该媒体源
+                                                 });
         }
     } catch (exception &e) {
         shutdown(SockException(Err_shutdown, e.what()));
