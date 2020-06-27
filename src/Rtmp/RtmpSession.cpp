@@ -47,7 +47,8 @@ void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
                                                                            vhost,
                                                                            app,
                                                                            stream));
-        if(src) {
+       //if(src)  // 这段话应该放到 收到flv时
+        {
             //src->modifyReaderCount(true);
             _pRingReader = src->getRing()->attach(EventPollerPool::Instance().getPoller());
             /*
@@ -94,10 +95,11 @@ void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
             }
             //提高服务器发送性能
             //setSocketFlags();
-        } else {
+        } //else
+            {
             auto poller = EventPollerPool::Instance().getPoller();
             PlayerProxy::Ptr player(new PlayerProxy(DEFAULT_VHOST, "app", "stream",false,false,false,false, -1, poller));
-            player->play("http://192.168.0.111:80/myapp/0.flv");
+            player->play("http://192.168.0.116:80/myapp/0.flv");
             s_proxyMap["myapp"] = player;
 
             NoticeCenter::Instance().addListener(nullptr, Broadcast::kBroadcastMediaChanged,
