@@ -181,7 +181,8 @@ static void eraseIfEmpty(MAP &map, IT0 it0, IT1 it1, IT2 it2) {
 };
 
 void MediaSource::findAsync_l(const MediaInfo &info, const std::shared_ptr<TcpSession> &session, bool retry, const function<void(const MediaSource::Ptr &src)> &cb){
-    auto src = MediaSource::find_l(info._schema, info._vhost, info._app, info._streamid, true);
+    //auto src = MediaSource::find_l(info._schema, info._vhost, info._app, info._streamid, true);
+    auto src = MediaSource::find_l("http", "__defaultVhost__", "app", "stream", true);
     if(src || !retry){
         cb(src);
         return;
@@ -214,6 +215,7 @@ void MediaSource::findAsync_l(const MediaInfo &info, const std::shared_ptr<TcpSe
             return;
         }
 
+        /*
         if (!bRegist ||
             sender.getSchema() != info._schema ||
             sender.getVhost() != info._vhost ||
@@ -222,6 +224,7 @@ void MediaSource::findAsync_l(const MediaInfo &info, const std::shared_ptr<TcpSe
             //不是自己感兴趣的事件，忽略之
             return;
         }
+         */
 
         //取消延时任务，防止多次回调
         onRegistTimeout->cancel();

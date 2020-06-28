@@ -45,15 +45,15 @@ protected:
 
 protected:
     //form Tcpclient
-    //void onRecv(const Buffer::Ptr &pBuf) override; // 2   // 3 FlvProtocol::onParseFlv实现rawbuf->framePack
+    //void onRecv(const Buffer::Ptr &pBuf) override; // 2   // 3 FlvProtocol::onParseFlv实现rawbuf->framePack  //然后protocol层调上层 4
     void onResponseBody(const char *buf,int64_t size,int64_t recvedSize,int64_t totalSize) override;
 
 protected:
     //from FlvProtocol
-    void onFlvFrame(FlvPacket &frameData) override; // 上层本层接受
+    void onFlvFrame(FlvPacket &frameData) override; // 上层本层接受protocol解析出来的flvpacket // 4 called 5
 
 protected:
-    virtual void onMediaData(const FlvPacket::Ptr &frameData) = 0;
+    virtual void onMediaData(const FlvPacket::Ptr &frameData) = 0; // 5 上层(全局flvMS/flvplayerimp层)调用 最终写到全局flvMS的rb中
 
 private:
     string _strApp;
@@ -68,7 +68,6 @@ private:
     std::shared_ptr<Timer> _pBeatTimer;
 
     bool _metadata_got = false;
-
 };
 
 //实现了rtmp播放器协议部分的功能，及数据接收功能

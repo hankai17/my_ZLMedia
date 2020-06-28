@@ -103,6 +103,7 @@ public:
         //PacketCache<RtmpPacket>::inputPacket(pkt->typeId == MSG_VIDEO, pkt, key);
         //_ring->write(pkt, _have_video ? pkt->iskeyFrame : true);
         _ring->write(pkt, pkt->iskeyFrame);
+        //std::cout << "global flvMS rb write _ring addr: " << &_ring << std::endl;
     }
 
 private:

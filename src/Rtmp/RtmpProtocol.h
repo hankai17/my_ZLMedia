@@ -46,6 +46,7 @@ public:
     bool is_first_flv_pack;
 
     flv_header_t m_flvHeader;
+    std::string m_flv_base_header;
     FlvPacket _first_audio_tag;
     FlvPacket _first_video_tag;
     FlvPacket _first_script_tag;

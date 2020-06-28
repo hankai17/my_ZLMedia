@@ -17,6 +17,7 @@
 #include "Thread/semaphore.h"
 #include "Poller/EventPoller.h"
 #include "Thread/WorkThreadPool.h"
+#include <iomanip>
 using namespace std;
 
 #define LOCK_GUARD(mtx) lock_guard<decltype(mtx)> lck(mtx)
@@ -830,11 +831,26 @@ EventPoller::Ptr SocketHelper::getPoller(){
     return _poller;
 }
 
+static std::string to_hex(const std::string& str) {
+    std::stringstream ss;
+    for(size_t i = 0; i < str.size(); ++i) {
+        ss << std::setw(2) << std::setfill('0') << std::hex
+           << (int)(uint8_t)str[i];
+    }
+    return ss.str();
+}
+
 int SocketHelper::send(const Buffer::Ptr &buf) {
     if (!_sock) {
         return -1;
     }
-    return _sock->send(buf, nullptr, 0, _try_flush);
+    int ret;
+    //ret = _sock->send(buf, nullptr, 0, _try_flush);
+    std::cout << "------> send: " << to_hex(std::string(buf->data(), buf->size())) << std::endl;
+    ret = _sock->send(buf, nullptr, 0, true);
+    //std::cout << "send fd: " << _sock->rawFD()
+    //<< " ret: " << ret << std::endl;
+    return ret;
 }
 
 BufferRaw::Ptr SocketHelper::obtainBuffer(const void *data, int len) {

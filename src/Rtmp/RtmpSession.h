@@ -50,6 +50,8 @@ public:
         send(buffer);
     }
 
+    void sendPlayResponse(const string& err, const FlvMediaSource::Ptr& src);
+
     bool close(MediaSource &sender,bool force) { return false; }
     int totalReaderCount(MediaSource &sender) { return 1; }
 

@@ -123,7 +123,8 @@ void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
             return;
         }
         is_first_flv_pack = false;
-        std::cout << "get FLV" << std::endl;
+        m_flv_base_header = std::string((char*)&m_flvHeader, header_size);
+        std::cout << "get FLV: " << to_hex(m_flv_base_header) << std::endl;
         _strRcvBuf.erase(0, 13);
     }
     if (_strRcvBuf.size() == 0) {
@@ -131,7 +132,7 @@ void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
     }
 
     flv_tag_header_t tag_header;
-    std::cout << "tag_num: " << tag_num << " _strRcvBuf.size: " << _strRcvBuf.size() << " " << to_hex(string((char*)&_strRcvBuf[0], 11)) << std::endl;
+    //std::cout << "tag_num: " << tag_num << " _strRcvBuf.size: " << _strRcvBuf.size() << " " << to_hex(string((char*)&_strRcvBuf[0], 11)) << std::endl;
 
     while (_strRcvBuf.size() > 0) {
         //std::cout << "in while _strRcvBuf.size: " << _strRcvBuf.size() << std::endl;
@@ -145,7 +146,7 @@ void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
         }
 
         if (tag_header.size > _strRcvBuf.size() - 11 - 4) {
-            std::cout << tag_header.size  << " > " << _strRcvBuf.size() - 11 - 4 << std::endl;
+            //std::cout << tag_header.size  << " > " << _strRcvBuf.size() - 11 - 4 << std::endl;
             return;
         }
 
