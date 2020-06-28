@@ -148,7 +148,7 @@ public:
     }
 
     FlvPacket& operator=(FlvPacket&& that) {
-        strBuf = std::move(that.strBuf);
+        strBuf = (that.strBuf);
         type = that.type;
         iskeyFrame = that.iskeyFrame;
         timeStamp = that.timeStamp;

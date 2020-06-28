@@ -112,8 +112,8 @@ void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
             auto poller = EventPollerPool::Instance().getPoller();
             PlayerProxy::Ptr player(
                     new PlayerProxy(DEFAULT_VHOST, "app", "stream", false, false, false, false, -1, poller));
-            //player->play("http://192.168.0.116:80/myapp/0.flv");
-            player->play("http://10.0.120.194:80/myapp/0.flv");
+            player->play("http://192.168.0.116:80/myapp/0.flv");
+            //player->play("http://10.0.120.194:80/myapp/0.flv");
             s_proxyMap["myapp"] = player;
 
             NoticeCenter::Instance().addListener(nullptr, Broadcast::kBroadcastMediaChanged,
@@ -202,12 +202,13 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
         std::cout << "send http header: " << resp << std::endl;
 
         std::string script_tag = _first_script_tag.toString();
+        std::string tmp = m_flv_base_header;
 
         BufferRaw::Ptr bufferHeader = obtainBuffer();
-        bufferHeader->setCapacity(sizeof(m_flv_base_header.size()) );
-        bufferHeader->setSize(sizeof(m_flv_base_header.size()) );
-        memcpy(bufferHeader->data(), m_flv_base_header.c_str(), (m_flv_base_header.size()));
-        std::cout << "send m_flv_base_header: " << to_hex(m_flv_base_header) << std::endl;
+        bufferHeader->setCapacity(sizeof(tmp.size()) );
+        bufferHeader->setSize(sizeof(tmp.size()) );
+        memcpy(bufferHeader->data(), tmp.c_str(), (tmp.size()));
+        std::cout << "send m_flv_base_header: " << to_hex(tmp) << " addr: " << &tmp << std::endl;
         onSendRawData(bufferHeader);
 
         BufferRaw::Ptr bufferHeader1 = obtainBuffer();

@@ -54,6 +54,23 @@ protected:
 
 protected:
     virtual void onMediaData(const FlvPacket::Ptr &frameData) = 0; // 5 上层(全局flvMS/flvplayerimp层)调用 最终写到全局flvMS的rb中
+    virtual void setTagMsg(FlvPacket& pack, int flag) {
+        if (flag == 0) {
+            //_first_script_tag = std::forward<FlvPacket>(pack);
+            _first_script_tag = std::move(pack); // ????????????????????
+        } else if (flag == 1) {
+            _first_video_tag = std::move(pack);
+        } else if (flag == 2) {
+            _first_audio_tag = std::move(pack);
+        } else {
+            //m_flv_base_header = "";
+        }
+    }
+
+    virtual void setBaseHeader(const std::string& header) {
+        std::cout << "set flv_base_header: " << header << " addr: " << &m_flv_base_header << std::endl;
+        m_flv_base_header = header;
+    }
 
 private:
     string _strApp;
@@ -68,6 +85,11 @@ private:
     std::shared_ptr<Timer> _pBeatTimer;
 
     bool _metadata_got = false;
+
+    std::string flv_base_header;
+    FlvPacket first_audio_tag;
+    FlvPacket first_video_tag;
+    FlvPacket first_script_tag;
 };
 
 //实现了rtmp播放器协议部分的功能，及数据接收功能

@@ -59,6 +59,11 @@ protected:
 private:
     FlvMediaSource::Ptr _pFlvMediaSrc; // 1 构造一个flvMediaSource 实现onWrite功能
     bool _set_meta_data = false;
+
+    std::string m_flv_base_header;
+    FlvPacket _first_audio_tag;
+    FlvPacket _first_video_tag;
+    FlvPacket _first_script_tag;
 };
 
 class RtmpPlayerImp: public PlayerImp<RtmpPlayer,RtmpDemuxer> {

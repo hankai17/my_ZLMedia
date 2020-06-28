@@ -33,9 +33,12 @@ class FlvProtocol {
 public:
     FlvProtocol();
     void onParseFlv(const char *pcRawData,int iSize); // init first tag; get frame // 传入rawbuf
+    std::string getBaseHeader();
 
 public:
     virtual void onFlvFrame(FlvPacket &frameData) = 0; // parsed frame; called and override by upper // 传出framePack
+    virtual void setTagMsg(FlvPacket& pack, int flag) {};
+    virtual void setBaseHeader(const std::string& header) {};
 
 public:
     int tag_num = 0;

@@ -72,18 +72,22 @@ static int flv_data_parsed(void* param, int codec, const void* data, size_t byte
         if (!th->is_first_script_init) {
             th->is_first_script_init = true;
             th->_first_script_tag = std::move(pack);
+            th->setTagMsg(th->_first_script_tag, 0);
+            th->setBaseHeader(th->m_flv_base_header);
         }
 
     } else if (th->tag_type == 9) {
         if (!th->is_first_video_init) {
             th->is_first_video_init = true;
             th->_first_video_tag = std::move(pack);
+            th->setTagMsg(th->_first_video_tag, 1);
         }
 
     } else if (th->tag_type == 8) {
         if (!th->is_first_audio_init) {
             th->is_first_audio_init = true;
             th->_first_audio_tag = std::move(pack);
+            th->setTagMsg(th->_first_audio_tag, 2);
         }
     }
 
@@ -109,6 +113,9 @@ static std::string to_hex(const std::string& str) {
     return ss.str();
 }
 
+std::string FlvProtocol::getBaseHeader() {
+    return m_flv_base_header;
+}
 
 void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
     _strRcvBuf.append(pcRawData, iSize);
@@ -124,7 +131,7 @@ void FlvProtocol::onParseFlv(const char *pcRawData, int iSize) {
         }
         is_first_flv_pack = false;
         m_flv_base_header = std::string((char*)&m_flvHeader, header_size);
-        std::cout << "get FLV: " << to_hex(m_flv_base_header) << std::endl;
+        std::cout << "get FLV: " << to_hex(m_flv_base_header) << " addr: " << &m_flv_base_header << std::endl;
         _strRcvBuf.erase(0, 13);
     }
     if (_strRcvBuf.size() == 0) {
