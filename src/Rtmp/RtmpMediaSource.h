@@ -106,6 +106,11 @@ public:
         //std::cout << "global flvMS rb write _ring addr: " << &_ring << std::endl;
     }
 
+    std::string m_flv_base_header;
+    FlvPacket   m_flv_script_tag;
+    FlvPacket   m_flv_audio_tag;
+    FlvPacket   m_flv_video_tag;
+
 private:
     int _ring_size;
     //bool _have_video = false;

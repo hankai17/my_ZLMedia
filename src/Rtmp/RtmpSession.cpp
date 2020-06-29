@@ -112,8 +112,8 @@ void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
             auto poller = EventPollerPool::Instance().getPoller();
             PlayerProxy::Ptr player(
                     new PlayerProxy(DEFAULT_VHOST, "app", "stream", false, false, false, false, -1, poller));
-            //player->play("http://192.168.0.116:80/myapp/0.flv");
-            player->play("http://10.0.120.194:80/myapp/0.flv");
+            player->play("http://192.168.0.116:80/myapp/0.flv");
+            //player->play("http://10.0.120.194:80/myapp/0.flv");
             s_proxyMap["myapp"] = player;
 
             NoticeCenter::Instance().addListener(nullptr, Broadcast::kBroadcastMediaChanged,
@@ -146,7 +146,7 @@ void FlvSession::sendPlayResponse(const string& err, const FlvMediaSource::Ptr& 
     });
      */
     weak_ptr<FlvSession> weakSelf = dynamic_pointer_cast<FlvSession>(shared_from_this());
-    _pRingReader->setReadCB([weakSelf](const FlvPacket::Ptr &pkt) {
+    _pRingReader->setReadCB([weakSelf, src](const FlvPacket::Ptr &pkt) {
         auto strongSelf = weakSelf.lock();
         if (!strongSelf) {
             return;
@@ -168,6 +168,21 @@ void FlvSession::sendPlayResponse(const string& err, const FlvMediaSource::Ptr& 
         });
          */
         //std::cout << "pkt to_hex: " << to_hex(std::string(pkt->data(), pkt->size())) << std::endl;
+        if (!strongSelf->m_flv_base_header.size()) {
+            strongSelf->m_flv_base_header = src->m_flv_base_header;
+        }
+        if (!strongSelf->m_first_script_tag.size()) {
+            strongSelf->m_first_script_tag = std::move(src->m_flv_script_tag);
+        }
+        /*
+        if (!strongSelf->m_first_audio_tag.size()) {
+            strongSelf->m_first_audio_tag = std::move(src->m_flv_audio_tag);
+        }
+        if (!strongSelf->m_first_video_tag.size()) {
+            strongSelf->m_first_video_tag = std::move(src->m_flv_video_tag);
+        }
+         */
+
         strongSelf->onSendMedia(pkt);
         // TODO !!!! reset first
         // FlvMs not has firstxxx
@@ -207,29 +222,78 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
         std::string tmp = m_flv_base_header;
 
         BufferRaw::Ptr bufferHeader = obtainBuffer();
-        bufferHeader->setCapacity(sizeof(tmp.size()) );
-        bufferHeader->setSize(sizeof(tmp.size()) );
+        bufferHeader->setCapacity(tmp.size() + 4);
+        bufferHeader->setSize(tmp.size() + 4);
         memcpy(bufferHeader->data(), tmp.c_str(), (tmp.size()));
+        unsigned char n = 0;
+        for (int i = 0; i < 4; i++) {
+            memcpy(bufferHeader->data() + tmp.size() + i, &n ,1);
+        }
         std::cout << "send m_flv_base_header: " << to_hex(tmp) << " addr: " << &tmp << std::endl;
         onSendRawData(bufferHeader);
 
+        /*
         BufferRaw::Ptr bufferHeader1 = obtainBuffer();
         bufferHeader1->setCapacity(sizeof(script_tag.size()) );
         bufferHeader1->setSize(sizeof(script_tag.size()) );
         memcpy(bufferHeader1->data(), script_tag.c_str(), (script_tag.size()));
         onSendRawData(bufferHeader1);
         std::cout << "send flv_script_tag: " << script_tag << std::endl;
+         */
+    }
+
+    if (!once_flag1) {
+        once_flag1 = true;
+        std::string tmp = m_first_script_tag.toString();
+        BufferRaw::Ptr bufferHeader = obtainBuffer();
+        bufferHeader->setCapacity(tmp.size() + 4);
+        bufferHeader->setSize(tmp.size() + 4);
+        memcpy(bufferHeader->data(), tmp.c_str(), tmp.size());
+
+        // size to hex_string
+        for (int i = 0; i < 4; i++) {
+            unsigned char n;
+            if (i == 3) {
+                n = tmp.size() % (256);
+            } else if ( i == 2) {
+                n = tmp.size() / (256 << 0) % 256;
+            } else if ( i == 1) {
+                n = tmp.size() / (256 << 8) % 256;
+            } else if ( i == 0) {
+                n = tmp.size() / (256 << 16) % 256;
+            }
+            memcpy(bufferHeader->data() + tmp.size() + i, &n ,1);
+        }
+
+
+        std::cout << "send m_flv_base_header: " << to_hex(tmp) << " addr: " << &tmp << std::endl;
+        onSendRawData(bufferHeader);
     }
 
     // send cachelist
-    BufferRaw::Ptr bufferHeader = obtainBuffer();
-    bufferHeader->setCapacity(pkt->size());
-    bufferHeader->setSize(pkt->size());
+    BufferRaw::Ptr bufferHeader2 = obtainBuffer();
+    bufferHeader2->setCapacity(pkt->size() + 4);
+    bufferHeader2->setSize(pkt->size() + 4);
     //strncpy(bufferHeader->data(), pkt->toString().c_str(), pkt->size());
-    memcpy(bufferHeader->data(), pkt->toString().c_str(), pkt->size());
+    memcpy(bufferHeader2->data(), pkt->toString().c_str(), pkt->size());
+
+    for (int i = 0; i < 4; i++) {
+        unsigned char n;
+        if (i == 3) {
+            n = pkt->size() % (256);
+        } else if ( i == 2) {
+            n = pkt->size() / (256 << 0) % 256;
+        } else if ( i == 1) {
+            n = pkt->size() / (256 << 8) % 256;
+        } else if ( i == 0) {
+            n = pkt->size() / (256 << 16) % 256;
+        }
+        memcpy(bufferHeader2->data() + pkt->size() + i, &n ,1);
+    }
+    std::cout << to_hex(std::string(bufferHeader2->data() + pkt->size(), 4)) << std::endl;
 
     //std::cout << "pkt->size: " << pkt->size() << " after copy pkt to_hex: " << to_hex(std::string(bufferHeader->data(), bufferHeader->size())) << std::endl;
-    onSendRawData(bufferHeader);
+    onSendRawData(bufferHeader2);
 }
 
 void FlvSession::onError(const SockException &err) {

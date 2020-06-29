@@ -46,6 +46,19 @@ protected:
             }
             */
             _pFlvMediaSrc->onWrite(frameData);
+            if(m_flv_base_header.size() || m_first_script_tag.size()
+                || m_first_video_tag.size() || m_first_audio_tag.size()) {
+                _pFlvMediaSrc->m_flv_base_header = m_flv_base_header;
+                if (!_pFlvMediaSrc->m_flv_script_tag.size()) {
+                    _pFlvMediaSrc->m_flv_script_tag = std::move(m_first_script_tag);
+                }
+                if (!_pFlvMediaSrc->m_flv_audio_tag.size()) {
+                    _pFlvMediaSrc->m_flv_audio_tag = std::move(m_first_audio_tag);
+                }
+                if (!_pFlvMediaSrc->m_flv_video_tag.size()) {
+                    _pFlvMediaSrc->m_flv_video_tag = std::move(m_first_video_tag);
+                }
+            }
         }
         /*
         if(!_delegate){
@@ -59,11 +72,6 @@ protected:
 private:
     FlvMediaSource::Ptr _pFlvMediaSrc; // 1 构造一个flvMediaSource 实现onWrite功能
     bool _set_meta_data = false;
-
-    std::string m_flv_base_header;
-    FlvPacket _first_audio_tag;
-    FlvPacket _first_video_tag;
-    FlvPacket _first_script_tag;
 };
 
 class RtmpPlayerImp: public PlayerImp<RtmpPlayer,RtmpDemuxer> {

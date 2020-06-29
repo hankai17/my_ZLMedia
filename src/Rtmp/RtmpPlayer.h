@@ -86,10 +86,6 @@ private:
 
     bool _metadata_got = false;
 
-    std::string flv_base_header;
-    FlvPacket first_audio_tag;
-    FlvPacket first_video_tag;
-    FlvPacket first_script_tag;
 };
 
 //实现了rtmp播放器协议部分的功能，及数据接收功能

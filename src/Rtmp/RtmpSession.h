@@ -58,6 +58,7 @@ public:
     void onFlvFrame(FlvPacket &frameData) { return; }
 private:
     bool once_flag = false;
+    bool once_flag1 = false;
     std::string _strTcUrl;
     MediaInfo _mediaInfo;
     double _dNowReqID = 0;
