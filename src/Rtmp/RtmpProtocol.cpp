@@ -71,23 +71,29 @@ static int flv_data_parsed(void* param, int codec, const void* data, size_t byte
     if (th->tag_type == 18) {
         if (!th->is_first_script_init) {
             th->is_first_script_init = true;
-            th->_first_script_tag = std::move(pack);
-            th->setTagMsg(th->_first_script_tag, 0);
+            //th->_first_script_tag = std::move(pack);
+            FlvPacket tmp = FlvPacket(th->tag_start, th->tag_len, th->tag_type, flags);
+            //FlvPacket tmp;
+            //tmp = FlvPacket(th->tag_start, th->tag_len, th->tag_type, flags);
+            th->m_first_script_tag = FlvPacket(th->tag_start, th->tag_len, th->tag_type, flags);
+            th->setTagMsg(tmp, 0);
             th->setBaseHeader(th->m_flv_base_header);
         }
 
     } else if (th->tag_type == 9) {
         if (!th->is_first_video_init) {
             th->is_first_video_init = true;
-            th->_first_video_tag = std::move(pack);
-            th->setTagMsg(th->_first_video_tag, 1);
+            th->m_first_video_tag = std::move(pack);
+            FlvPacket tmp = FlvPacket(th->tag_start, th->tag_len, th->tag_type, flags);
+            th->setTagMsg(tmp, 1);
         }
 
     } else if (th->tag_type == 8) {
         if (!th->is_first_audio_init) {
             th->is_first_audio_init = true;
-            th->_first_audio_tag = std::move(pack);
-            th->setTagMsg(th->_first_audio_tag, 2);
+            FlvPacket tmp = FlvPacket(th->tag_start, th->tag_len, th->tag_type, flags);
+            th->m_first_audio_tag = std::move(pack);
+            th->setTagMsg(tmp, 2);
         }
     }
 

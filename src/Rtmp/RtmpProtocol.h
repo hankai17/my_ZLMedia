@@ -41,6 +41,11 @@ public:
     virtual void setBaseHeader(const std::string& header) {};
 
 public:
+    std::string m_flv_base_header;
+    FlvPacket m_first_script_tag;
+    FlvPacket m_first_audio_tag;
+    FlvPacket m_first_video_tag;
+
     int tag_num = 0;
     string _strRcvBuf; // raw buff
     bool is_first_audio_init;
@@ -49,10 +54,6 @@ public:
     bool is_first_flv_pack;
 
     flv_header_t m_flvHeader;
-    std::string m_flv_base_header;
-    FlvPacket _first_audio_tag;
-    FlvPacket _first_video_tag;
-    FlvPacket _first_script_tag;
 
     uint8_t* tag_start;
     int tag_len;

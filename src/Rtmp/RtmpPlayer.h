@@ -57,11 +57,11 @@ protected:
     virtual void setTagMsg(FlvPacket& pack, int flag) {
         if (flag == 0) {
             //_first_script_tag = std::forward<FlvPacket>(pack);
-            _first_script_tag = std::move(pack); // ????????????????????
+            m_first_script_tag = std::move(pack); // ????????????????????
         } else if (flag == 1) {
-            _first_video_tag = std::move(pack);
+            m_first_video_tag = std::move(pack);
         } else if (flag == 2) {
-            _first_audio_tag = std::move(pack);
+            m_first_audio_tag = std::move(pack);
         } else {
             //m_flv_base_header = "";
         }
