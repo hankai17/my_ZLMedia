@@ -112,8 +112,8 @@ void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
             auto poller = EventPollerPool::Instance().getPoller();
             PlayerProxy::Ptr player(
                     new PlayerProxy(DEFAULT_VHOST, "app", "stream", false, false, false, false, -1, poller));
-            player->play("http://192.168.0.116:80/myapp/0.flv");
-            //player->play("http://10.0.120.194:80/myapp/0.flv");
+            //player->play("http://192.168.0.116:80/myapp/0.flv");
+            player->play("http://10.0.120.194:80/myapp/0.flv");
             s_proxyMap["myapp"] = player;
 
             NoticeCenter::Instance().addListener(nullptr, Broadcast::kBroadcastMediaChanged,
@@ -174,14 +174,12 @@ void FlvSession::sendPlayResponse(const string& err, const FlvMediaSource::Ptr& 
         if (!strongSelf->m_first_script_tag.size()) {
             strongSelf->m_first_script_tag = std::move(src->m_flv_script_tag);
         }
-        /*
         if (!strongSelf->m_first_audio_tag.size()) {
             strongSelf->m_first_audio_tag = std::move(src->m_flv_audio_tag);
         }
         if (!strongSelf->m_first_video_tag.size()) {
             strongSelf->m_first_video_tag = std::move(src->m_flv_video_tag);
         }
-         */
 
         strongSelf->onSendMedia(pkt);
         // TODO !!!! reset first
@@ -268,6 +266,62 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
 
         std::cout << "send m_flv_base_header: " << to_hex(tmp) << " addr: " << &tmp << std::endl;
         onSendRawData(bufferHeader);
+    }
+
+    if (!once_flag2) {
+        if (m_first_audio_tag.size()) {
+            std::string tmp = m_first_audio_tag.toString();
+            BufferRaw::Ptr bufferHeader = obtainBuffer();
+            bufferHeader->setCapacity(tmp.size() + 4);
+            bufferHeader->setSize(tmp.size() + 4);
+            memcpy(bufferHeader->data(), tmp.c_str(), tmp.size());
+
+            for (int i = 0; i < 4; i++) {
+                unsigned char n;
+                if (i == 3) {
+                    n = tmp.size() % (256);
+                } else if ( i == 2) {
+                    n = tmp.size() / (256 << 0) % 256;
+                } else if ( i == 1) {
+                    n = tmp.size() / (256 << 8) % 256;
+                } else if ( i == 0) {
+                    n = tmp.size() / (256 << 16) % 256;
+                }
+                memcpy(bufferHeader->data() + tmp.size() + i, &n ,1);
+            }
+            onSendRawData(bufferHeader);
+            once_flag2 = true;
+        } else {
+            once_flag2 = false;
+        }
+    }
+
+    if (!once_flag3) {
+        if (m_first_video_tag.size()) {
+            std::string tmp = m_first_video_tag.toString();
+            BufferRaw::Ptr bufferHeader = obtainBuffer();
+            bufferHeader->setCapacity(tmp.size() + 4);
+            bufferHeader->setSize(tmp.size() + 4);
+            memcpy(bufferHeader->data(), tmp.c_str(), tmp.size());
+
+            for (int i = 0; i < 4; i++) {
+                unsigned char n;
+                if (i == 3) {
+                    n = tmp.size() % (256);
+                } else if ( i == 2) {
+                    n = tmp.size() / (256 << 0) % 256;
+                } else if ( i == 1) {
+                    n = tmp.size() / (256 << 8) % 256;
+                } else if ( i == 0) {
+                    n = tmp.size() / (256 << 16) % 256;
+                }
+                memcpy(bufferHeader->data() + tmp.size() + i, &n ,1);
+            }
+            onSendRawData(bufferHeader);
+            once_flag3 = true;
+        } else {
+            once_flag3 = false;
+        }
     }
 
     // send cachelist
