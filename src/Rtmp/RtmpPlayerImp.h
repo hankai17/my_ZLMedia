@@ -34,7 +34,7 @@ public:
     };
 
 protected:
-    virtual void onMediaData(const FlvPacket::Ptr &frameData) { // 接受底层传过来的数据
+    virtual void onMediaData(const FlvPacket::Ptr& frameData) {
         if(!_pFlvMediaSrc) {
             _pFlvMediaSrc = dynamic_pointer_cast<FlvMediaSource>(_pMediaSrc);
         }
@@ -46,17 +46,12 @@ protected:
             }
             */
             _pFlvMediaSrc->onWrite(frameData);
-            if(m_flv_base_header.size() || m_first_script_tag.size()
-                || m_first_video_tag.size() || m_first_audio_tag.size()) {
-                _pFlvMediaSrc->m_flv_base_header = m_flv_base_header;
-                if (!_pFlvMediaSrc->m_flv_script_tag.size()) {
-                    _pFlvMediaSrc->m_flv_script_tag = std::move(m_first_script_tag);
-                }
-                if (!_pFlvMediaSrc->m_flv_audio_tag.size()) {
-                    _pFlvMediaSrc->m_flv_audio_tag = std::move(m_first_audio_tag);
-                }
-                if (!_pFlvMediaSrc->m_flv_video_tag.size()) {
-                    _pFlvMediaSrc->m_flv_video_tag = std::move(m_first_video_tag);
+            if (!_pFlvMediaSrc->isScriptTagInit() || !_pFlvMediaSrc->isAudioTagInit()
+            || !_pFlvMediaSrc->isVideoTagInit()) {
+                if (isScriptTagInit() && isAudioTagInit() && isVideoTagInit()) {
+                    _pFlvMediaSrc->setFirstScriptTag(getFirstScriptTag());
+                    _pFlvMediaSrc->setFirstAudioTag(getFirstAudioTag());
+                    _pFlvMediaSrc->setFirstVideoTag(getFirstVideoTag());
                 }
             }
         }

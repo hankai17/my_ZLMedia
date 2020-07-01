@@ -40,42 +40,29 @@ public:
     void onPlayResult_l(const SockException &ex , bool handshakeCompleted);
 
 protected:
-    void play(const string &strUrl) override; // 1
-    //void onConnect(const SockException &ex) override;
+    void play(const string& strUrl) override; // 1 precheck url & send to os
 
 protected:
-    //form Tcpclient
-    //void onRecv(const Buffer::Ptr &pBuf) override; // 2   // 3 FlvProtocol::onParseFlv实现rawbuf->framePack  //然后protocol层调上层 4
-    void onResponseBody(const char *buf,int64_t size,int64_t recvedSize,int64_t totalSize) override;
+    //for HttpClient
+    int64_t onResponseHeader(const string &status,const HttpHeader &headers) override;
+    void onResponseBody(const char *buf,int64_t size,int64_t recvedSize,int64_t totalSize) override;// 2 FlvProtocol::onParseFlv实现rawbuf->framePack  //然后protocol层调上层
 
 protected:
     //from FlvProtocol
-    void onFlvFrame(FlvPacket &frameData) override; // 上层本层接受protocol解析出来的flvpacket // 4 called 5
+    void onFlvFrame(FlvPacket &frameData) override; // 3 上层本层接受protocol解析出来的flvpacket
 
 protected:
-    virtual void onMediaData(const FlvPacket::Ptr &frameData) = 0; // 5 上层(全局flvMS/flvplayerimp层)调用 最终写到全局flvMS的rb中
-    virtual void setTagMsg(FlvPacket& pack, int flag) {
-        if (flag == 0) {
-            //_first_script_tag = std::forward<FlvPacket>(pack);
-            m_first_script_tag = std::move(pack); // ????????????????????
-        } else if (flag == 1) {
-            m_first_video_tag = std::move(pack);
-        } else if (flag == 2) {
-            m_first_audio_tag = std::move(pack);
-        } else {
-            //m_flv_base_header = "";
-        }
+    virtual void onMediaData(const FlvPacket::Ptr &frameData) = 0; // 4 上层(全局flvMS/flvplayerimp层)调用 最终写到全局flvMS的rb中
+    virtual void setTagMsg(FlvPacket::Ptr pack, int flag) {
     }
 
     virtual void setBaseHeader(const std::string& header) {
-        std::cout << "set flv_base_header: " << header << " addr: " << &m_flv_base_header << std::endl;
-        m_flv_base_header = header;
     }
 
 private:
-    string _strApp;
-    string _strStream;
-    string _strTcUrl;
+    string              _strApp;
+    string              _strStream;
+    string              _strTcUrl;
 
     //超时功能实现
     Ticker _mediaTicker;

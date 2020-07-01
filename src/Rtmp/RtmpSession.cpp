@@ -168,17 +168,18 @@ void FlvSession::sendPlayResponse(const string& err, const FlvMediaSource::Ptr& 
         });
          */
         //std::cout << "pkt to_hex: " << to_hex(std::string(pkt->data(), pkt->size())) << std::endl;
-        if (!strongSelf->m_flv_base_header.size()) {
-            strongSelf->m_flv_base_header = src->m_flv_base_header;
+        // assert MS already has fisrt tags TODO
+        if (!strongSelf->isFlvBaseHeaderInit()) {
+            strongSelf->setFlvHeader(src->getFlvHeader());
         }
-        if (!strongSelf->m_first_script_tag.size()) {
-            strongSelf->m_first_script_tag = std::move(src->m_flv_script_tag);
+        if (!strongSelf->isScriptTagInit()) {
+            strongSelf->setFirstScriptTag(src->getFirstScriptTag());
         }
-        if (!strongSelf->m_first_audio_tag.size()) {
-            strongSelf->m_first_audio_tag = std::move(src->m_flv_audio_tag);
+        if (!strongSelf->isAudioTagInit()) {
+            strongSelf->setFirstAudioTag(src->getFirstAudioTag());
         }
-        if (!strongSelf->m_first_video_tag.size()) {
-            strongSelf->m_first_video_tag = std::move(src->m_flv_video_tag);
+        if (!strongSelf->isVideoTagInit()) {
+            strongSelf->setFirstVideoTag(src->getFirstVideoTag());
         }
 
         strongSelf->onSendMedia(pkt);
@@ -216,8 +217,7 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
         onSendRawData(buffer_rsp);
         std::cout << "send http header: " << resp << std::endl;
 
-        std::string script_tag = m_first_script_tag.toString();
-        std::string tmp = m_flv_base_header;
+        std::string tmp = getFlvHeader();
 
         BufferRaw::Ptr bufferHeader = obtainBuffer();
         bufferHeader->setCapacity(tmp.size() + 4);
@@ -231,6 +231,7 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
         onSendRawData(bufferHeader);
 
         /*
+        std::string script_tag = getFirstScriptTag()->toString();
         BufferRaw::Ptr bufferHeader1 = obtainBuffer();
         bufferHeader1->setCapacity(sizeof(script_tag.size()) );
         bufferHeader1->setSize(sizeof(script_tag.size()) );
@@ -242,7 +243,7 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
 
     if (!once_flag1) {
         once_flag1 = true;
-        std::string tmp = m_first_script_tag.toString();
+        std::string tmp = getFirstScriptTag()->toString();
         BufferRaw::Ptr bufferHeader = obtainBuffer();
         bufferHeader->setCapacity(tmp.size() + 4);
         bufferHeader->setSize(tmp.size() + 4);
@@ -269,8 +270,8 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
     }
 
     if (!once_flag2) {
-        if (m_first_audio_tag.size()) {
-            std::string tmp = m_first_audio_tag.toString();
+        if (isAudioTagInit()) {
+            std::string tmp = getFirstAudioTag()->toString();
             BufferRaw::Ptr bufferHeader = obtainBuffer();
             bufferHeader->setCapacity(tmp.size() + 4);
             bufferHeader->setSize(tmp.size() + 4);
@@ -297,8 +298,8 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
     }
 
     if (!once_flag3) {
-        if (m_first_video_tag.size()) {
-            std::string tmp = m_first_video_tag.toString();
+        if (isVideoTagInit()) {
+            std::string tmp = getFirstVideoTag()->toString();
             BufferRaw::Ptr bufferHeader = obtainBuffer();
             bufferHeader->setCapacity(tmp.size() + 4);
             bufferHeader->setSize(tmp.size() + 4);

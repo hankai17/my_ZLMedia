@@ -105,18 +105,29 @@ public:
         _ring->write(pkt, pkt->iskeyFrame);
         //std::cout << "global flvMS rb write _ring addr: " << &_ring << std::endl;
     }
+    bool isScriptTagInit() { return m_first_script_tag == nullptr ? false : true; }
+    bool isAudioTagInit() { return m_first_audio_tag == nullptr ? false : true; }
+    bool isVideoTagInit() { return m_first_video_tag == nullptr ? false : true; }
 
-    std::string m_flv_base_header;
-    FlvPacket   m_flv_script_tag;
-    FlvPacket   m_flv_audio_tag;
-    FlvPacket   m_flv_video_tag;
+    void setFlvHeader(const std::string& header) { m_flv_base_header; }
+    void setFirstScriptTag(const FlvPacket::Ptr& pack) { m_first_script_tag = pack; }
+    void setFirstAudioTag(const FlvPacket::Ptr& pack) { m_first_audio_tag = pack; }
+    void setFirstVideoTag(const FlvPacket::Ptr& pack) { m_first_video_tag = pack; }
+
+    std::string getFlvHeader() const { return m_flv_base_header; }
+    FlvPacket::Ptr getFirstScriptTag() const { return m_first_script_tag; }
+    FlvPacket::Ptr getFirstAudioTag() const { return m_first_audio_tag; }
+    FlvPacket::Ptr getFirstVideoTag() const { return m_first_video_tag; }
 
 private:
-    int _ring_size;
-    //bool _have_video = false;
+    std::string         m_flv_base_header;
+    FlvPacket::Ptr      m_first_script_tag;
+    FlvPacket::Ptr      m_first_audio_tag;
+    FlvPacket::Ptr      m_first_video_tag;
+
+    int                 _ring_size;
     mutable recursive_mutex _mtx;
     AMFValue _metadata;
-    //RingType::Ptr _ring;
     RingBuffer<FlvPacket::Ptr>::Ptr _ring;
     unordered_map<int, uint32_t> _track_stamps_map;
     unordered_map<int, FlvPacket::Ptr> _config_frame_map;

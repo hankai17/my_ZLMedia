@@ -32,32 +32,47 @@ namespace mediakit {
 class FlvProtocol {
 public:
     FlvProtocol();
-    void onParseFlv(const char *pcRawData,int iSize); // init first tag; get frame // 传入rawbuf
-    std::string getBaseHeader();
+    void onParseFlv(const char *pcRawData,int iSize);
+
+    void setFlvHeader(const std::string& header) { m_flv_base_header; }
+    void setFirstScriptTag(const FlvPacket::Ptr& pack) { m_first_script_tag = pack; }
+    void setFirstAudioTag(const FlvPacket::Ptr& pack) { m_first_audio_tag = pack; }
+    void setFirstVideoTag(const FlvPacket::Ptr& pack) { m_first_video_tag = pack; }
+
+    std::string getFlvHeader() const { return m_flv_base_header; }
+    FlvPacket::Ptr getFirstScriptTag() const { return m_first_script_tag; }
+    FlvPacket::Ptr getFirstAudioTag() const { return m_first_audio_tag; }
+    FlvPacket::Ptr getFirstVideoTag() const { return m_first_video_tag; }
+
+    bool isScriptTagInit() { return m_first_script_tag == nullptr ? false : true; }
+    bool isAudioTagInit() { return m_first_audio_tag == nullptr ? false : true; }
+    bool isVideoTagInit() { return m_first_video_tag == nullptr ? false : true; }
+
+    uint8_t* getTagStart() const { return tag_start; }
+    int getTagLen() const { return tag_len; }
+    int getTagType() const { return tag_type; }
+
+    void setTagStart(uint8_t* start) { tag_start = start; }
+    void setTagLen(int len) { tag_len = len; }
+    void setTagType(int type) { tag_type = type; }
+
+    bool isFlvBaseHeaderInit() { return m_flv_base_header.size() == 9 ? true : false; }
 
 public:
-    virtual void onFlvFrame(FlvPacket &frameData) = 0; // parsed frame; called and override by upper // 传出framePack
-    virtual void setTagMsg(FlvPacket& pack, int flag) {};
-    virtual void setBaseHeader(const std::string& header) {};
+    virtual void onFlvFrame(FlvPacket& frameData) = 0;
 
-public:
-    std::string m_flv_base_header;
-    FlvPacket m_first_script_tag;
-    FlvPacket m_first_audio_tag;
-    FlvPacket m_first_video_tag;
+private:
+    std::string m_flv_base_header = "";
+    FlvPacket::Ptr m_first_script_tag = nullptr;
+    FlvPacket::Ptr m_first_audio_tag = nullptr;
+    FlvPacket::Ptr m_first_video_tag = nullptr;
 
-    int tag_num = 0;
-    string _strRcvBuf; // raw buff
-    bool is_first_audio_init;
-    bool is_first_video_init;
-    bool is_first_script_init;
-    bool is_first_flv_pack;
+    uint8_t*        tag_start = nullptr;
+    int             tag_len;
+    int             tag_type;
 
-    flv_header_t m_flvHeader;
-
-    uint8_t* tag_start;
-    int tag_len;
-    int tag_type;
+    string          _strRcvBuf; // raw buff
+    int             tag_num = 0;
 };
 
 class RtmpProtocol {

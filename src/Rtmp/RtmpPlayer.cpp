@@ -27,23 +27,6 @@ FlvPlayer::~FlvPlayer() {
 }
 
 void FlvPlayer::onFlvFrame(FlvPacket &frameData) {
-    switch (frameData.type) {
-        case 18: {
-
-        }
-            break;
-        case 9: {
-
-        }
-            break;
-        case 8: {
-
-        }
-            break;
-        default: {
-            break;
-        }
-    }
     onMediaData(std::make_shared<FlvPacket>(std::move(frameData)));
 }
 
@@ -123,7 +106,7 @@ void FlvPlayer::play(const string& strUrl) {
         if(!strongSelf) {
             return false;
         }
-        strongSelf->onPlayResult_l(SockException(Err_timeout,"play rtmp timeout"),false);
+        strongSelf->onPlayResult_l(SockException(Err_timeout,"play flv timeout"),false);
         return false;
     },getPoller()));
 
@@ -136,7 +119,16 @@ void FlvPlayer::play(const string& strUrl) {
 //void FlvPlayer::onConnect(const SockException &ex) {
 //}
 
-void FlvPlayer::onResponseBody(const char *buf,int64_t size,int64_t recvedSize,int64_t totalSize) {
+int64_t FlvPlayer::onResponseHeader(const string &status, const HttpHeader& headers) {
+    if (status.size() == 0 || strstr(status.c_str(), "200 OK") == NULL) {
+        shutdown(SockException(Err_shutdown, "http response not 200 OK"));
+        return -1;
+    }
+    // Other response header check TODO
+    return -1;
+}
+
+void FlvPlayer::onResponseBody(const char *buf, int64_t size, int64_t recvedSize, int64_t totalSize) {
     onParseFlv(buf, size);
 }
 
