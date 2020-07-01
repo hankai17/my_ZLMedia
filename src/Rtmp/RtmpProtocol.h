@@ -34,7 +34,7 @@ public:
     FlvProtocol();
     void onParseFlv(const char *pcRawData,int iSize);
 
-    void setFlvHeader(const std::string& header) { m_flv_base_header; }
+    void setFlvHeader(const std::string& header) { m_flv_base_header = header; }
     void setFirstScriptTag(const FlvPacket::Ptr& pack) { m_first_script_tag = pack; }
     void setFirstAudioTag(const FlvPacket::Ptr& pack) { m_first_audio_tag = pack; }
     void setFirstVideoTag(const FlvPacket::Ptr& pack) { m_first_video_tag = pack; }
@@ -56,7 +56,7 @@ public:
     void setTagLen(int len) { tag_len = len; }
     void setTagType(int type) { tag_type = type; }
 
-    bool isFlvBaseHeaderInit() { return m_flv_base_header.size() == 9 ? true : false; }
+    bool isFlvBaseHeaderInit() { return m_flv_base_header.size() == 9 + 4 ? true : false; }
 
 public:
     virtual void onFlvFrame(FlvPacket& frameData) = 0;

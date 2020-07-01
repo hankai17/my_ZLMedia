@@ -120,7 +120,7 @@ void FlvPlayer::play(const string& strUrl) {
 //}
 
 int64_t FlvPlayer::onResponseHeader(const string &status, const HttpHeader& headers) {
-    if (status.size() == 0 || strstr(status.c_str(), "200 OK") == NULL) {
+    if (status.size() == 0 || strstr(status.c_str(), "200") == NULL) {
         shutdown(SockException(Err_shutdown, "http response not 200 OK"));
         return -1;
     }

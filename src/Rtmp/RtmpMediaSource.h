@@ -109,7 +109,7 @@ public:
     bool isAudioTagInit() { return m_first_audio_tag == nullptr ? false : true; }
     bool isVideoTagInit() { return m_first_video_tag == nullptr ? false : true; }
 
-    void setFlvHeader(const std::string& header) { m_flv_base_header; }
+    void setFlvHeader(const std::string& header) { m_flv_base_header = header; }
     void setFirstScriptTag(const FlvPacket::Ptr& pack) { m_first_script_tag = pack; }
     void setFirstAudioTag(const FlvPacket::Ptr& pack) { m_first_audio_tag = pack; }
     void setFirstVideoTag(const FlvPacket::Ptr& pack) { m_first_video_tag = pack; }

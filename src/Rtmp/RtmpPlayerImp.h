@@ -54,6 +54,9 @@ protected:
                     _pFlvMediaSrc->setFirstVideoTag(getFirstVideoTag());
                 }
             }
+            if (!_pFlvMediaSrc->getFlvHeader().size()) {
+                _pFlvMediaSrc->setFlvHeader(getFlvHeader());
+            }
         }
         /*
         if(!_delegate){

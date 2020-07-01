@@ -43,24 +43,35 @@ void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
     _ticker.resetTime();
     try {
         _ui64TotalBytes += pBuf->size();
-        //onParseRtmp(pBuf->data(), pBuf->size());
-        const char* pos = pBuf->data();
-        int size = pBuf->size();
-        std::string req(pos, size);
-        std::string fline = req.substr(0, req.find("\r\n"));
-        fline = fline.substr(fline.find(' '));
-        fline = fline.substr(0, fline.find(' '));
 
-        std::string vhost = "127.0.0.1";
+        /*
+        _strApp = 	FindField(strUrl.data(), (strHost + "/").data(), "/");
+        _strStream = FindField(strUrl.data(), (strHost + "/" + _strApp + "/").data(), NULL);
+        _strTcUrl = string("http://") + strHost + "/" + _strApp;
+         */
+
+        std::string sch = "http";
+        std::string vhost = "__defaultVhost__";
+
+        GET_CONFIG(bool,enableVhost,General::kEnableVhost);
+        if(enableVhost) {
+            vhost = "127.0.0.1";
+        }
+
         std::string app = "myapp";
         std::string stream = "0";
+        std::string client_req_url = "http://" + vhost + "/" + app + "/" + stream;
+
+        _mediaInfo._schema = sch;
+        _mediaInfo._vhost = vhost;
+        _mediaInfo._app = app;
+        _mediaInfo._streamid = stream;
 
         auto src = dynamic_pointer_cast<FlvMediaSource>(MediaSource::find(HTTP_SCHEMA,
                                                                            vhost,
                                                                            app,
                                                                            stream));
-        if(src)  // 这段话应该放到 收到flv时
-        {
+        if(src) {
             //src->modifyReaderCount(true);
             _pRingReader = src->getRing()->attach(EventPollerPool::Instance().getPoller());
             /*
@@ -70,7 +81,7 @@ void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
             });
              */
             weak_ptr<FlvSession> weakSelf = dynamic_pointer_cast<FlvSession>(shared_from_this());
-            _pRingReader->setReadCB([weakSelf](const FlvPacket::Ptr &pkt) {
+            _pRingReader->setReadCB([weakSelf, src](const FlvPacket::Ptr &pkt) {
                 auto strongSelf = weakSelf.lock();
                 if (!strongSelf) {
                     return;
@@ -92,6 +103,19 @@ void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
                 });
                  */
 
+                if (!strongSelf->isFlvBaseHeaderInit()) {
+                    strongSelf->setFlvHeader(src->getFlvHeader());
+                }
+                if (!strongSelf->isScriptTagInit()) {
+                    strongSelf->setFirstScriptTag(src->getFirstScriptTag());
+                }
+                if (!strongSelf->isAudioTagInit()) {
+                    strongSelf->setFirstAudioTag(src->getFirstAudioTag());
+                }
+                if (!strongSelf->isVideoTagInit()) {
+                    strongSelf->setFirstVideoTag(src->getFirstVideoTag());
+                }
+
                 strongSelf->onSendMedia(pkt);
             });
 
@@ -100,7 +124,7 @@ void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
                 if (!strongSelf) {
                     return;
                 }
-                strongSelf->shutdown(SockException(Err_shutdown, "rtmp ring buffer detached"));
+                strongSelf->shutdown(SockException(Err_shutdown, "flv ring buffer detached"));
             });
             _pPlayerSrc = src;
             if (src->totalReaderCount() == 1) {
@@ -110,11 +134,12 @@ void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
             //setSocketFlags();
         } else {
             auto poller = EventPollerPool::Instance().getPoller();
+
             PlayerProxy::Ptr player(
-                    new PlayerProxy(DEFAULT_VHOST, "app", "stream", false, false, false, false, -1, poller));
-            //player->play("http://192.168.0.116:80/myapp/0.flv");
-            player->play("http://10.0.120.194:80/myapp/0.flv");
-            s_proxyMap["myapp"] = player;
+                    new PlayerProxy(vhost, app, stream, false, false, false, false, -1, poller));
+            player->play("http://192.168.0.116:80/myapp/0.flv");
+            //player->play("http://10.0.120.194:80/myapp/0.flv");
+            s_proxyMap[client_req_url] = player;
 
             NoticeCenter::Instance().addListener(nullptr, Broadcast::kBroadcastMediaChanged,
                                                  [poller](BroadcastMediaChangedArgs) {
@@ -220,13 +245,9 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
         std::string tmp = getFlvHeader();
 
         BufferRaw::Ptr bufferHeader = obtainBuffer();
-        bufferHeader->setCapacity(tmp.size() + 4);
-        bufferHeader->setSize(tmp.size() + 4);
+        bufferHeader->setCapacity(tmp.size());
+        bufferHeader->setSize(tmp.size());
         memcpy(bufferHeader->data(), tmp.c_str(), (tmp.size()));
-        unsigned char n = 0;
-        for (int i = 0; i < 4; i++) {
-            memcpy(bufferHeader->data() + tmp.size() + i, &n ,1);
-        }
         std::cout << "send m_flv_base_header: " << to_hex(tmp) << " addr: " << &tmp << std::endl;
         onSendRawData(bufferHeader);
 

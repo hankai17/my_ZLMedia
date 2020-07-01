@@ -62,6 +62,7 @@ private:
 
     bool once_flag2 = false;
     bool once_flag3 = false;
+
     std::string _strTcUrl;
     MediaInfo _mediaInfo;
     double _dNowReqID = 0;

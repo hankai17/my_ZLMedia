@@ -125,7 +125,9 @@ void FlvProtocol::onParseFlv(const char* pcRawData, int iSize) {
             return;
         }
         //m_flv_base_header = std::string((char*)&flvHeader, header_size);
-        char tmp[] = { 'F', 'L', 'V', 0x01, 0x05, 0x00, 0x00, 0x00, 0x09 };
+        m_flv_base_header.resize(13);
+        char tmp[] = { 'F', 'L', 'V', 0x01, 0x05, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00 };
+
         for (int i = 0; i < 13; i++) {
             memcpy(&m_flv_base_header[i], &tmp[i], 1);
         }
