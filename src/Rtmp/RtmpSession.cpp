@@ -137,8 +137,8 @@ void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
 
             PlayerProxy::Ptr player(
                     new PlayerProxy(vhost, app, stream, false, false, false, false, -1, poller));
-            player->play("http://192.168.0.116:80/myapp/0.flv");
-            //player->play("http://10.0.120.194:80/myapp/0.flv");
+            //player->play("http://192.168.0.116:80/myapp/0.flv");
+            player->play("http://10.0.120.194:80/myapp/0.flv");
             s_proxyMap[client_req_url] = player;
 
             NoticeCenter::Instance().addListener(nullptr, Broadcast::kBroadcastMediaChanged,

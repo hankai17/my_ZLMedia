@@ -105,6 +105,7 @@ public:
         _ring->write(pkt, pkt->iskeyFrame);
         //std::cout << "global flvMS rb write _ring addr: " << &_ring << std::endl;
     }
+
     bool isScriptTagInit() { return m_first_script_tag == nullptr ? false : true; }
     bool isAudioTagInit() { return m_first_audio_tag == nullptr ? false : true; }
     bool isVideoTagInit() { return m_first_video_tag == nullptr ? false : true; }
