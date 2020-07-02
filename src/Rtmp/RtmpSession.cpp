@@ -137,8 +137,8 @@ void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
 
             PlayerProxy::Ptr player(
                     new PlayerProxy(vhost, app, stream, false, false, false, false, -1, poller));
-            //player->play("http://192.168.0.116:80/myapp/0.flv");
-            player->play("http://10.0.120.194:80/myapp/0.flv");
+            player->play("http://192.168.0.116:80/myapp/0.flv");
+            //player->play("http://10.0.120.194:80/myapp/0.flv");
             s_proxyMap[client_req_url] = player;
 
             NoticeCenter::Instance().addListener(nullptr, Broadcast::kBroadcastMediaChanged,
@@ -346,6 +346,14 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
         }
     }
 
+    if (pkt->getType() == 8) {
+        dts_audio += 22;
+        pkt->setTimeStamp(dts_audio);
+    } else if (pkt->getType() == 9) {
+        dts_video += 40;
+        pkt->setTimeStamp(dts_video);
+    }
+
     // send cachelist
     BufferRaw::Ptr bufferHeader2 = obtainBuffer();
     bufferHeader2->setCapacity(pkt->size() + 4);
@@ -366,7 +374,7 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
         }
         memcpy(bufferHeader2->data() + pkt->size() + i, &n ,1);
     }
-    std::cout << to_hex(std::string(bufferHeader2->data() + pkt->size(), 4)) << std::endl;
+    //std::cout << to_hex(std::string(bufferHeader2->data() + pkt->size(), 4)) << std::endl;
 
     //std::cout << "pkt->size: " << pkt->size() << " after copy pkt to_hex: " << to_hex(std::string(bufferHeader->data(), bufferHeader->size())) << std::endl;
     onSendRawData(bufferHeader2);

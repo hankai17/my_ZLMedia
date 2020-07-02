@@ -172,7 +172,7 @@ void FlvProtocol::onParseFlv(const char* pcRawData, int iSize) {
                 if (header_size == -1 || header_size != 5) {
                     return;
                 }
-                std::cout << "tag_header timestamp: " << tag_header.timestamp << std::endl;
+                std::cout << "video tag_header timestamp: " << tag_header.timestamp << std::endl;
                 flv_parser_input(tag_type, (void*)(pos + 11), len - 11, tag_header.timestamp, flv_data_parsed, (void*)this);
                 _strRcvBuf.erase(0, 11 + tag_header.size + 4);
                 tag_num++;

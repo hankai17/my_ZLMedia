@@ -163,6 +163,30 @@ public:
         return strBuf.size();
     };
 
+    void setTimeStamp(int v) {
+        timeStamp = v;
+        // check tag header valid
+        char* p = &strBuf[0];
+        for (int i = 0; i < 4; i++) {
+            unsigned char n;
+            if (i == 0) {
+                n = v / (256 << 16) % 256;
+                memcpy((p + 7), &n, 1);
+            } else if (i == 1) {
+                n = v / (256 << 8) % 256;
+                memcpy((p + 4), &n, 1);
+            } else if (i == 2) {
+                n = v / (256 << 0) % 256;
+                memcpy((p + 5), &n, 1);
+            } else if (i == 3) {
+                n = v % (256);
+                memcpy((p + 6), &n, 1);
+            }
+        }
+    }
+
+    int getType() const { return type; }
+
 public:
     std::string strBuf;
     int type;
