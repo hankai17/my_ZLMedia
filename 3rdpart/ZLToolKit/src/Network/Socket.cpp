@@ -846,7 +846,7 @@ int SocketHelper::send(const Buffer::Ptr &buf) {
     }
     int ret;
     //ret = _sock->send(buf, nullptr, 0, _try_flush);
-    std::cout << "------> send: " << to_hex(std::string(buf->data(), buf->size())) << std::endl;
+    //std::cout << "------> send: " << to_hex(std::string(buf->data(), buf->size())) << std::endl;
     ret = _sock->send(buf, nullptr, 0, true);
     //std::cout << "send fd: " << _sock->rawFD()
     //<< " ret: " << ret << std::endl;

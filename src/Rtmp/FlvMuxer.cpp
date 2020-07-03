@@ -155,6 +155,9 @@ void FlvMuxer::onWriteFlvTag(uint8_t ui8Type, const Buffer::Ptr &buffer, uint32_
 void FlvMuxer::onWriteRtmp(const RtmpPacket::Ptr &pkt,bool flush) {
     int64_t dts_out;
     _stamp[pkt->typeId % 2].revise(pkt->timeStamp, 0, dts_out, dts_out);
+    if (pkt->typeId == 9) {
+        std::cout << "video rtmpPacket timestamp: " << pkt->timeStamp << " dts_out: " << dts_out << std::endl;
+    }
     onWriteFlvTag(pkt, dts_out,flush);
 }
 
