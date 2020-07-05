@@ -333,7 +333,7 @@ void installWebHook(){
         do_http_hook(hook_stream_chaned,body, nullptr);
     });
 
-    //监听播放失败(未找到特定的流)事件
+    //监听播放失败(未找到特定的流)事件 // 所有notfoundhook都走这
     NoticeCenter::Instance().addListener(nullptr,Broadcast::kBroadcastNotFoundStream,[](BroadcastNotFoundStreamArgs){
         if(!hook_enable || hook_stream_not_found.empty()){
             return;

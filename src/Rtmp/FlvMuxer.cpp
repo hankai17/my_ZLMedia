@@ -156,7 +156,9 @@ void FlvMuxer::onWriteRtmp(const RtmpPacket::Ptr &pkt,bool flush) {
     int64_t dts_out;
     _stamp[pkt->typeId % 2].revise(pkt->timeStamp, 0, dts_out, dts_out);
     if (pkt->typeId == 9) {
-        std::cout << "video rtmpPacket timestamp: " << pkt->timeStamp << " dts_out: " << dts_out << std::endl;
+        std::cout << "video ori dts: " << pkt->timeStamp << " pts: 0 " << ", after dts: " << dts_out << " pts: " << dts_out << std::endl;
+    } else if (pkt->typeId == 8) {
+        std::cout << "audio ori dts: " << pkt->timeStamp << " pts: 0 " << ", after dts: " << dts_out << " pts: " << dts_out << std::endl;
     }
     onWriteFlvTag(pkt, dts_out,flush);
 }

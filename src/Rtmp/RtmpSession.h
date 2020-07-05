@@ -77,8 +77,6 @@ private:
     //消耗的总流量
     uint64_t _ui64TotalBytes = 0;
     bool _paused = false;
-    int dts_audio = 0;
-    int dts_video = 0;
 };
 
 class RtmpSession: public TcpSession ,public  RtmpProtocol , public MediaSourceEvent{

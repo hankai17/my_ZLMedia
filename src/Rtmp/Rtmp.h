@@ -164,7 +164,7 @@ public:
     };
 
     void setTimeStamp(int v) {
-        timeStamp = v;
+        //timeStamp = v;
         // check tag header valid
         char* p = &strBuf[0];
         for (int i = 0; i < 4; i++) {
@@ -185,6 +185,8 @@ public:
         }
     }
 
+    void setOriTimeStmap(int v) { timeStamp = v; }
+    uint32_t getTimeStamp() const { return timeStamp; }
     int getType() const { return type; }
 
 public:

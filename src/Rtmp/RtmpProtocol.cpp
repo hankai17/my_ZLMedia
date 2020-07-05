@@ -105,6 +105,14 @@ static int flv_data_parsed(void* param, int codec, const void* data, size_t byte
         }
     }
     FlvPacket tmp_pack(flv_proto->getTagStart(), flv_proto->getTagLen(), flv_proto->getTagType(), flags);
+    // init ori dts
+
+
+    uint8_t* p = flv_proto->getTagStart();
+    uint32_t tmp1 = (p[4] << 16) | (p[5] << 8) | p[6] | (p[7] << 24);
+    //std::cout << " param: dts: " << dts << " pts: " << pts << " tmp: " << tmp1 << std::endl;
+    tmp_pack.setOriTimeStmap(dts);
+
     flv_proto->onFlvFrame(tmp_pack);
     return 0;
 }
@@ -172,7 +180,7 @@ void FlvProtocol::onParseFlv(const char* pcRawData, int iSize) {
                 if (header_size == -1 || header_size != 5) {
                     return;
                 }
-                std::cout << "video tag_header timestamp: " << tag_header.timestamp << std::endl;
+                //std::cout << "video tag_header timestamp: " << tag_header.timestamp << std::endl;
                 flv_parser_input(tag_type, (void*)(pos + 11), len - 11, tag_header.timestamp, flv_data_parsed, (void*)this);
                 _strRcvBuf.erase(0, 11 + tag_header.size + 4);
                 tag_num++;

@@ -56,7 +56,7 @@ void Stamp::revise(int64_t dts, int64_t pts, int64_t &dts_out, int64_t &pts_out,
         return;
     }
 
-    if(_sync_master && _sync_master->_last_dts){
+    if(_sync_master && _sync_master->_last_dts){ // master一般是视频
         //音视频dts当前时间差
         int64_t dts_diff = _last_dts - _sync_master->_last_dts;
         if(ABS(dts_diff) < 5000){

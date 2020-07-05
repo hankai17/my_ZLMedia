@@ -137,8 +137,8 @@ void FlvSession::onRecv(const Buffer::Ptr& pBuf) {
 
             PlayerProxy::Ptr player(
                     new PlayerProxy(vhost, app, stream, false, false, false, false, -1, poller));
-            //player->play("http://192.168.0.116:80/myapp/0.flv");
-            player->play("http://10.0.120.194:80/myapp/0.flv");
+            player->play("http://192.168.0.118:80/myapp/0.flv");
+            //player->play("http://10.0.120.194:80/myapp/0.flv");
             s_proxyMap[client_req_url] = player;
 
             NoticeCenter::Instance().addListener(nullptr, Broadcast::kBroadcastMediaChanged,
@@ -170,6 +170,7 @@ void FlvSession::sendPlayResponse(const string& err, const FlvMediaSource::Ptr& 
         *added = false;
     });
      */
+    _stamp[0].syncTo(_stamp[1]);
     weak_ptr<FlvSession> weakSelf = dynamic_pointer_cast<FlvSession>(shared_from_this());
     _pRingReader->setReadCB([weakSelf, src](const FlvPacket::Ptr &pkt) {
         auto strongSelf = weakSelf.lock();
@@ -227,10 +228,14 @@ void FlvSession::sendPlayResponse(const string& err, const FlvMediaSource::Ptr& 
 
 void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
     //rtmp播放器时间戳从零开始
-    /*
     int64_t dts_out;
-    _stamp[pkt->typeId % 2].revise(pkt->timeStamp, 0, dts_out, dts_out);
-     */
+    _stamp[pkt->getType() % 2].revise(pkt->getTimeStamp(), 0, dts_out, dts_out);
+    if (pkt->getType() == 9) {
+        //std::cout << "video ori dts: " << pkt->getTimeStamp() << " pts: 0 " << ", after dts: " << dts_out << " pts: " << dts_out << std::endl;
+    } else if (pkt->getType() == 8) {
+        //std::cout << "audio ori dts: " << pkt->getTimeStamp() << " pts: 0 " << ", after dts: " << dts_out << " pts: " << dts_out << std::endl;
+    }
+
     //sendRtmp(pkt->typeId, pkt->streamId, pkt, dts_out, pkt->chunkId);
     if (!once_flag) {
         once_flag = true;
@@ -251,21 +256,8 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
         std::cout << "send m_flv_base_header: " << to_hex(tmp) << " addr: " << &tmp << std::endl;
         onSendRawData(bufferHeader);
 
-        /*
-        std::string script_tag = getFirstScriptTag()->toString();
-        BufferRaw::Ptr bufferHeader1 = obtainBuffer();
-        bufferHeader1->setCapacity(sizeof(script_tag.size()) );
-        bufferHeader1->setSize(sizeof(script_tag.size()) );
-        memcpy(bufferHeader1->data(), script_tag.c_str(), (script_tag.size()));
-        onSendRawData(bufferHeader1);
-        std::cout << "send flv_script_tag: " << script_tag << std::endl;
-         */
-    }
-
-    if (!once_flag1) {
-        once_flag1 = true;
-        std::string tmp = getFirstScriptTag()->toString();
-        BufferRaw::Ptr bufferHeader = obtainBuffer();
+        ///////////////////////////////////////////////////////////////////////
+        tmp = getFirstScriptTag()->toString();
         bufferHeader->setCapacity(tmp.size() + 4);
         bufferHeader->setSize(tmp.size() + 4);
         memcpy(bufferHeader->data(), tmp.c_str(), tmp.size());
@@ -285,12 +277,10 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
             memcpy(bufferHeader->data() + tmp.size() + i, &n ,1);
         }
 
-
-        std::cout << "send m_flv_base_header: " << to_hex(tmp) << " addr: " << &tmp << std::endl;
+        //std::cout << "send m_flv_base_header: " << to_hex(tmp) << " addr: " << &tmp << std::endl;
         onSendRawData(bufferHeader);
-    }
 
-    if (!once_flag2) {
+        ////////////////////////////////////////////////////////////////////
         if (isAudioTagInit()) {
             std::string tmp = getFirstAudioTag()->toString();
             BufferRaw::Ptr bufferHeader = obtainBuffer();
@@ -312,13 +302,9 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
                 memcpy(bufferHeader->data() + tmp.size() + i, &n ,1);
             }
             onSendRawData(bufferHeader);
-            once_flag2 = true;
-        } else {
-            once_flag2 = false;
         }
-    }
 
-    if (!once_flag3) {
+        /////////////////////////////////////////////////////////
         if (isVideoTagInit()) {
             std::string tmp = getFirstVideoTag()->toString();
             BufferRaw::Ptr bufferHeader = obtainBuffer();
@@ -340,19 +326,11 @@ void FlvSession::onSendMedia(const FlvPacket::Ptr &pkt) {
                 memcpy(bufferHeader->data() + tmp.size() + i, &n ,1);
             }
             onSendRawData(bufferHeader);
-            once_flag3 = true;
-        } else {
-            once_flag3 = false;
         }
+
     }
 
-    if (pkt->getType() == 8) {
-        dts_audio += 22;
-        pkt->setTimeStamp(dts_audio);
-    } else if (pkt->getType() == 9) {
-        dts_video += 40;
-        pkt->setTimeStamp(dts_video);
-    }
+    pkt->setTimeStamp(dts_out);
 
     // send cachelist
     BufferRaw::Ptr bufferHeader2 = obtainBuffer();
