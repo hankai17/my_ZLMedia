@@ -135,6 +135,7 @@ void FlvProtocol::onParseFlv(const char* pcRawData, int iSize) {
         //m_flv_base_header = std::string((char*)&flvHeader, header_size);
         m_flv_base_header.resize(13);
         char tmp[] = { 'F', 'L', 'V', 0x01, 0x05, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00 };
+        //char flv_file_header[] = "FLV\x1\x5\x0\x0\x0\x9"; // have audio and have video
 
         for (int i = 0; i < 13; i++) {
             memcpy(&m_flv_base_header[i], &tmp[i], 1);
