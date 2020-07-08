@@ -965,7 +965,7 @@ void installWebApi() {
                        ori_url,
                        false,/* 开启rtsp转发 */
                        true,/* 开启rtmp转发 */
-                       false,/* 开启hls转发 */
+                       true,/* 开启hls转发 */
                        false,/* 禁用MP4录制 */
                        0,//rtp over tcp方式拉流
                        [invoker,val,headerOut](const SockException &ex,const string &key){
